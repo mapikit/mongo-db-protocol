@@ -16,7 +16,16 @@ export class SchemaRepo {
     private readonly schemaList : SchemaType[],
     private readonly connectedDb : Db,
     public readonly schemaDiffFunction : SchemaDiffFunction,
-  ) {}
+  ) {
+    this.getCollection = this.getCollection.bind(this);
+    this.getSchema = this.getSchema.bind(this);
+    this.bootDb = this.bootDb.bind(this);
+    this.compareSchemas = this.compareSchemas.bind(this);
+    this.getNewSchemas = this.getNewSchemas.bind(this);
+    this.getRenamedSchemas = this.getRenamedSchemas.bind(this);
+    this.saveSchemaVersion = this.saveSchemaVersion.bind(this);
+    this.getLatestSchemaVersion = this.getLatestSchemaVersion.bind(this);
+  }
 
   public async bootDb () : Promise<void> {
     const newSchemas = await this.getNewSchemas();
