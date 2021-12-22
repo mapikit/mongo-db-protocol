@@ -24,6 +24,20 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
 
   constructor (config : ProtocolConfigParams, schemaList : SchemaType[]) {
     super(config, schemaList);
+
+
+    this.verifySchemaSupport = this.verifySchemaSupport.bind(this);
+    this.validateConfiguration = this.validateConfiguration.bind(this);
+    this.initialize = this.initialize.bind(this);
+    this.shutdown = this.shutdown.bind(this);
+    this.insert = this.insert.bind(this);
+    this.deleteById = this.deleteById.bind(this);
+    this.updateById = this.updateById.bind(this);
+    this.update = this.update.bind(this);
+    this.delete = this.delete.bind(this);
+    this.findById = this.findById.bind(this);
+    this.find = this.find.bind(this);
+    this.count = this.count.bind(this);
   }
 
   public verifySchemaSupport () : void {
