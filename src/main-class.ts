@@ -80,11 +80,13 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     return {};
   }
 
-  public async insert (schemaId : string, parameters : { data : unknown }) : Promise<BaseDBProtocolResponse> {
+  public async insert (schemaId : string, parameters : { data : unknown })
+    : Promise<BaseDBProtocolResponse & { insertedId : string }> {
     const result = await this.schemaRepo.getCollection(schemaId).insertOne(parameters.data);
 
     return {
       success: result.insertedId !== undefined,
+      insertedId: result.insertedId.toString(),
     };
   }
 
@@ -148,8 +150,6 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     const schema = this.schemaRepo.getSchema(schemaId);
     const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
       .getFullMongoQuery();
-
-    console.log(JSON.stringify(builtQuery, null, 2));
 
     let partialResult = this.schemaRepo.getCollection(schemaId).find(builtQuery);
 

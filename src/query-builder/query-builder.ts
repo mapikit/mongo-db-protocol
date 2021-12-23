@@ -45,7 +45,6 @@ export class MongoSchemaQueryBuilder {
       }
 
       const queried = {};
-      console.log(path);
       queried[path] = this.buildQuery(prop, type);
 
       result["$and"].push(queried);
