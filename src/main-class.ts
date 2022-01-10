@@ -50,7 +50,7 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
       throw Error("The provided database name is not a valid string");
     }
 
-    if (this.protocolConfiguration.dbConnectionString !== undefined) {
+    if (this.protocolConfiguration.dbConnectionString === undefined) {
       throw Error("The db connection string was not provided, aborting!");
     }
   }
