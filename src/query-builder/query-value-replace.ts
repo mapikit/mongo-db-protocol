@@ -9,7 +9,9 @@ import { valueToReplaceObjectArray,
   valueToReplaceDate,
   valueToReplaceDateArray,
   valueToReplaceBooleanArray,
-  valueToReplaceObject } from "./query-translation-type";
+  valueToReplaceObject,
+  innerRuleValueToReplace,
+} from "./query-translation-type";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, max-lines-per-function
 export const queryValueReplace = <T>(query : FilterOperators<T>, replacer : any) :
@@ -43,7 +45,7 @@ const replaceObjectArray = (input : unknown[]) : unknown[] => {
   return result;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line max-lines-per-function, @typescript-eslint/no-explicit-any
 const isReplaceableValue = (input : any) : boolean => {
   const replaceableValues = [
     valueToReplaceString,
@@ -56,6 +58,7 @@ const isReplaceableValue = (input : any) : boolean => {
     valueToReplaceBooleanArray,
     valueToReplaceObject,
     valueToReplaceObjectArray,
+    innerRuleValueToReplace,
   ];
 
   return replaceableValues.includes(input);

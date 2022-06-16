@@ -1,6 +1,6 @@
 {
   "name": "@meta-system/mongodb-db-protocol",
-  "version": "1.0.7",
+  "version": "2.0.0",
   "description": "A DB protocol for mongo and Meta-System",
   "main": "dist/index.js",
   "scripts": {
@@ -33,7 +33,7 @@
     "typescript": "^4.5.2"
   },
   "dependencies": {
-    "@meta-system/meta-protocol-helper": "^0.2.6",
+    "@meta-system/meta-protocol-helper": "^0.3.2",
     "@meta-system/object-definition": "^1.0.6",
     "@typescript-eslint/eslint-plugin": "^5.6.0",
     "mongodb": "^4.2.1"

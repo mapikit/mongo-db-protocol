@@ -22,6 +22,7 @@ export const valueToReplaceDateArray = [valueToReplaceDate];
 export const valueToReplaceBooleanArray = [valueToReplaceBoolean];
 export const valueToReplaceObject = { 0: null };
 export const valueToReplaceObjectArray = [valueToReplaceObject];
+export const innerRuleValueToReplace = { $innerRuleHere: null };
 
 export const stringQueryTranslationMap : Map<keyof TypeStringQuery, FilterOperators<string>> = new Map();
 stringQueryTranslationMap.set("equal_to", Object.freeze({ "$eq": valueToReplaceString }));
@@ -59,8 +60,8 @@ dateQueryTranslationMap.set("not_one_of", Object.freeze({ "$nin": valueToReplace
 dateQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 
 export const stringArrayQueryTranslationMap :
-Map<keyof TypeStringArrayQuery, FilterOperators<Array<string>>> = new Map();
-stringArrayQueryTranslationMap.set("contains", Object.freeze({ "$all": [valueToReplaceString] }));
+Map<keyof TypeStringArrayQuery, FilterOperators<Array<string> | string>> = new Map();
+stringArrayQueryTranslationMap.set("contains", Object.freeze({ "$elemMatch": { "$in": [valueToReplaceString] } }));
 stringArrayQueryTranslationMap.set("contains_all", Object.freeze({ "$all": valueToReplaceStringArray }));
 stringArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 stringArrayQueryTranslationMap.set("identical_to", Object.freeze({ "$eq": valueToReplaceStringArray }));
@@ -69,10 +70,17 @@ stringArrayQueryTranslationMap.set("contains_none_of", Object.freeze({ "$nin": v
 stringArrayQueryTranslationMap.set("not_contains", Object.freeze({ "$nin": [valueToReplaceString] as unknown as string[][] }));
 stringArrayQueryTranslationMap.set("size", Object.freeze({ "$size": valueToReplaceNumber }));
 stringArrayQueryTranslationMap.set("contains_regexp", Object.freeze({ "$elemMatch": { "$regex": valueToReplaceString } }));
+stringArrayQueryTranslationMap.set("equal_to", Object.freeze({ "$eq": valueToReplaceString }));
+stringArrayQueryTranslationMap.set("not_equal_to", Object.freeze({ "$ne": valueToReplaceString }));
+stringArrayQueryTranslationMap.set("one_of", Object.freeze({ "$in": valueToReplaceStringArray }));
+stringArrayQueryTranslationMap.set("not_one_of", Object.freeze({ "$nin": valueToReplaceStringArray }));
+stringArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
+stringArrayQueryTranslationMap.set("regexp", Object.freeze({ "$regex": valueToReplaceString }));
+stringArrayQueryTranslationMap.set("one_fulfills", Object.freeze({ "$elemMatch": innerRuleValueToReplace }));
 
 export const numberArrayQueryTranslationMap :
-Map<keyof TypeNumberArrayQuery, FilterOperators<Array<number>>> = new Map();
-numberArrayQueryTranslationMap.set("contains", Object.freeze({ "$all": [valueToReplaceNumber] }));
+Map<keyof TypeNumberArrayQuery, FilterOperators<Array<number> | number>> = new Map();
+numberArrayQueryTranslationMap.set("contains", Object.freeze({ "$elemMatch": { "$in": [valueToReplaceNumber] } }));
 numberArrayQueryTranslationMap.set("contains_all", Object.freeze({ "$all": valueToReplaceNumberArray }));
 numberArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 numberArrayQueryTranslationMap.set("identical_to", Object.freeze({ "$eq": valueToReplaceNumberArray }));
@@ -84,10 +92,19 @@ numberArrayQueryTranslationMap.set("contains_greater_than", Object.freeze({ "$el
 numberArrayQueryTranslationMap.set("contains_greater_or_equal_to", Object.freeze({ "$elemMatch": { "$gte": valueToReplaceNumber } }));
 numberArrayQueryTranslationMap.set("contains_less_than", Object.freeze({ "$elemMatch": { "$lt": valueToReplaceNumber } }));
 numberArrayQueryTranslationMap.set("contains_less_or_equal_to", Object.freeze({ "$elemMatch": { "$lte": valueToReplaceNumber } }));
+numberArrayQueryTranslationMap.set("equal_to", Object.freeze({ "$eq": valueToReplaceNumber }));
+numberArrayQueryTranslationMap.set("not_equal_to", Object.freeze({ "$ne": valueToReplaceNumber }));
+numberArrayQueryTranslationMap.set("greater_than", Object.freeze({ "$gt": valueToReplaceNumber }));
+numberArrayQueryTranslationMap.set("greater_or_equal_to", Object.freeze({ "$gte": valueToReplaceNumber }));
+numberArrayQueryTranslationMap.set("less_than", Object.freeze({ "$lt": valueToReplaceNumber }));
+numberArrayQueryTranslationMap.set("less_or_equal_to", Object.freeze({ "$lte": valueToReplaceNumber }));
+numberArrayQueryTranslationMap.set("one_of", Object.freeze({ "$in": valueToReplaceNumberArray }));
+numberArrayQueryTranslationMap.set("not_one_of", Object.freeze({ "$nin": valueToReplaceNumberArray }));
+numberArrayQueryTranslationMap.set("one_fulfills", Object.freeze({ "$elemMatch": innerRuleValueToReplace }));
 
 export const booleanArrayQueryTranslationMap :
-Map<keyof TypeBooleanArrayQuery, FilterOperators<Array<boolean>>> = new Map();
-booleanArrayQueryTranslationMap.set("contains", Object.freeze({ "$all": [valueToReplaceBoolean] }));
+Map<keyof TypeBooleanArrayQuery, FilterOperators<Array<boolean> | boolean>> = new Map();
+booleanArrayQueryTranslationMap.set("contains", Object.freeze({ "$elemMatch": { "$in": [valueToReplaceBoolean] } }));
 booleanArrayQueryTranslationMap.set("contains_all", Object.freeze({ "$all": valueToReplaceBooleanArray }));
 booleanArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 booleanArrayQueryTranslationMap.set("identical_to", Object.freeze({ "$eq": valueToReplaceBooleanArray }));
@@ -95,10 +112,14 @@ booleanArrayQueryTranslationMap.set("contains_one_of", Object.freeze({ "$elemMat
 booleanArrayQueryTranslationMap.set("contains_none_of", Object.freeze({ "$nin": valueToReplaceBooleanArray as unknown as boolean[][] }));
 booleanArrayQueryTranslationMap.set("not_contains", Object.freeze({ "$nin": [valueToReplaceBoolean] as unknown as boolean[][] }));
 booleanArrayQueryTranslationMap.set("size", Object.freeze({ "$size": valueToReplaceNumber }));
+booleanArrayQueryTranslationMap.set("equal_to", Object.freeze({ "$eq": valueToReplaceBoolean }));
+booleanArrayQueryTranslationMap.set("not_equal_to", Object.freeze({ "$ne": valueToReplaceBoolean }));
+booleanArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
+booleanArrayQueryTranslationMap.set("one_fulfills", Object.freeze({ "$elemMatch": innerRuleValueToReplace }));
 
 export const dateArrayQueryTranslationMap :
-Map<keyof TypeDateArrayQuery, FilterOperators<Array<Date>>> = new Map();
-dateArrayQueryTranslationMap.set("contains", Object.freeze({ "$all": [valueToReplaceDate] }));
+Map<keyof TypeDateArrayQuery, FilterOperators<Array<Date> | Date>> = new Map();
+dateArrayQueryTranslationMap.set("contains", Object.freeze({ "$elemMatch": { "$in": [valueToReplaceDate] } }));
 dateArrayQueryTranslationMap.set("contains_all", Object.freeze({ "$all": valueToReplaceDateArray }));
 dateArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 dateArrayQueryTranslationMap.set("identical_to", Object.freeze({ "$eq": valueToReplaceDateArray }));
@@ -110,6 +131,16 @@ dateArrayQueryTranslationMap.set("contains_greater_than", Object.freeze({ "$elem
 dateArrayQueryTranslationMap.set("contains_greater_or_equal_to", Object.freeze({ "$elemMatch": { "$gte": valueToReplaceDate } }));
 dateArrayQueryTranslationMap.set("contains_less_than", Object.freeze({ "$elemMatch": { "$lt": valueToReplaceDate } }));
 dateArrayQueryTranslationMap.set("contains_less_or_equal_to", Object.freeze({ "$elemMatch": { "$lte": valueToReplaceDate } }));
+dateArrayQueryTranslationMap.set("one_fulfills", Object.freeze({ "$elemMatch": innerRuleValueToReplace }));
+dateArrayQueryTranslationMap.set("equal_to", Object.freeze({ "$eq": valueToReplaceDate }));
+dateArrayQueryTranslationMap.set("not_equal_to", Object.freeze({ "$ne": valueToReplaceDate }));
+dateArrayQueryTranslationMap.set("greater_than", Object.freeze({ "$gt": valueToReplaceDate }));
+dateArrayQueryTranslationMap.set("greater_or_equal_to", Object.freeze({ "$gte": valueToReplaceDate }));
+dateArrayQueryTranslationMap.set("less_than", Object.freeze({ "$lt": valueToReplaceDate }));
+dateArrayQueryTranslationMap.set("less_or_equal_to", Object.freeze({ "$lte": valueToReplaceDate }));
+dateArrayQueryTranslationMap.set("one_of", Object.freeze({ "$in": valueToReplaceDateArray }));
+dateArrayQueryTranslationMap.set("not_one_of", Object.freeze({ "$nin": valueToReplaceDateArray }));
+dateArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 
 export const objectArrayQueryTranslationMap :
 Map<keyof TypeObjectArrayQuery, FilterOperators<Array<object>>> = new Map();

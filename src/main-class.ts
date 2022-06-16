@@ -44,17 +44,6 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     this.schemaList;
   }
 
-  public validateConfiguration () : void {
-    const dbName = this.protocolConfiguration.databaseName;
-    if (typeof dbName !== "string" || dbName.length < 1) {
-      throw Error("The provided database name is not a valid string");
-    }
-
-    if (this.protocolConfiguration.dbConnectionString === undefined) {
-      throw Error("The db connection string was not provided, aborting!");
-    }
-  }
-
   public async initialize () : Promise<void> {
     const connection = new Mongo.MongoClient(this.protocolConfiguration.dbConnectionString);
     this.connection = await connection.connect();

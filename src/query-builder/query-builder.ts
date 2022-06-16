@@ -31,8 +31,16 @@ export class MongoSchemaQueryBuilder {
 
     const queryPaths = this.queryMapperTool(this.queryInput);
 
+    // eslint-disable-next-line max-lines-per-function
     Object.keys(queryPaths).forEach((path) => {
-      const type = this.availableQueryPaths.get(path);
+      let usingPath = path;
+      let isArrayFulfilling = false;
+      if (path.endsWith(".one_fulfills")) {
+        isArrayFulfilling = true;
+        usingPath = path.slice(0, -".one_fulfills".length);
+      }
+
+      const type = this.availableQueryPaths.get(usingPath);
       const prop = getObjectProperty(this.queryInput, path);
       const complexKey = this.getComplexKeyFromProp(prop as Record<string, unknown>);
 
@@ -45,7 +53,15 @@ export class MongoSchemaQueryBuilder {
       }
 
       const queried = {};
-      queried[path] = this.buildQuery(prop, type);
+      if (isArrayFulfilling) {
+        const outerProp = getObjectProperty(this.queryInput, usingPath);
+        const innerProp = getObjectProperty(this.queryInput, path);
+        outerProp["one_fulfills"] = this.buildQuery(innerProp, type);
+
+        queried[usingPath] = this.buildQuery(outerProp, type);
+      } else {
+        queried[usingPath] = this.buildQuery(prop, type);
+      }
 
       result["$and"].push(queried);
     });

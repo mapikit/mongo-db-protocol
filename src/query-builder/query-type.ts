@@ -7,6 +7,9 @@ export type PropertyQuery = TypeStringQuery | TypeNumberQuery
 | TypeNumberArrayQuery | TypeBooleanArrayQuery | TypeDateArrayQuery
 | TypeObjectArrayQuery;
 
+export type FlatPropertyQuery = TypeStringQuery | TypeNumberQuery
+| TypeDateQuery | TypeBooleanQuery;
+
 export enum QueryTypes {
   string,
   number,
@@ -64,27 +67,28 @@ interface TypeArrayQuery<T> {
   identical_to ?: T[];
   contains_all ?: T[];
   contains ?: T;
-  not_contains ?: string;
+  not_contains ?: T;
   contains_one_of ?: T[];
   contains_none_of ?: T[];
   size ?: number;
   exists ?: boolean;
+  one_fulfills ?: FlatPropertyQuery;
 }
 
-export interface TypeStringArrayQuery extends TypeArrayQuery<string> {
+export interface TypeStringArrayQuery extends TypeArrayQuery<string>, TypeStringQuery{
   contains_regexp ?: string;
 }
 
-export interface TypeNumberArrayQuery extends TypeArrayQuery<number> {
+export interface TypeNumberArrayQuery extends TypeArrayQuery<number>, TypeNumberQuery {
   contains_greater_than ?: number;
   contains_greater_or_equal_to ?: number;
   contains_less_than ?: number;
   contains_less_or_equal_to ?: number;
 }
 
-export type TypeBooleanArrayQuery = TypeArrayQuery<boolean>;
+export interface TypeBooleanArrayQuery extends TypeArrayQuery<boolean>, TypeBooleanQuery {};
 
-export interface TypeDateArrayQuery extends TypeArrayQuery<Date> {
+export interface TypeDateArrayQuery extends TypeArrayQuery<Date>, TypeDateQuery {
   contains_greater_than ?: Date;
   contains_greater_or_equal_to ?: Date;
   contains_less_than ?: Date;
