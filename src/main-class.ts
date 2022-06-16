@@ -145,12 +145,15 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     if (parameters.limit) partialResult = partialResult.limit(parameters.limit);
     if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
 
+    const totalCount = await partialResult.count();
+    const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
     const result = [];
     await partialResult.forEach((element) => { result.push(element); });
 
     return {
       success: partialResult !== undefined,
       data: result,
+      pages,
     };
   }
 

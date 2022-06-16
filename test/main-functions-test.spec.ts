@@ -66,9 +66,10 @@ describe("General Tests", () => {
       dollarBillsInVirtualWallet: {
         one_fulfills: { greater_or_equal_to: 20, less_than: 50 },
       },
-    } });
+    }, limit: 10 });
 
     expect(result.success).to.be.true;
     expect(result.data[0]["name"]).to.be.equal("Mary");
+    expect(result.pages).to.be.equal(1);
   });
 });
