@@ -3,5 +3,9 @@
   "version": "1.0.0",
   "description": "A DB protocol for mongo and Meta-System",
   "entrypoint": "./dist/index.js",
-  "className": "MongoDbProtocol"
+  "className": "MongoDbProtocol",
+  "configurationFormat": {
+    "dbConnectionString": { "type": "string", "required": true },
+    "databaseName": { "type": "string", "required": true }
+  }
 }
