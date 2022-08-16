@@ -90,7 +90,7 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
   public async updateById (schemaId : string, parameters : { data : unknown, id : string })
     : Promise<BaseDBProtocolResponse> {
     const result = await this.schemaRepo.getCollection(schemaId)
-      .updateOne({ _id: new Mongo.ObjectId(parameters.id) }, parameters.data);
+      .updateOne({ _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data });
 
     return {
       success: result.modifiedCount > 0,
@@ -103,7 +103,7 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
       .getFullMongoQuery();
 
-    const result = await this.schemaRepo.getCollection(schemaId).updateMany(builtQuery, parameters.data);
+    const result = await this.schemaRepo.getCollection(schemaId).updateMany(builtQuery, { $set: parameters.data });
 
     return {
       success: result !== undefined,

@@ -72,4 +72,25 @@ describe("General Tests", () => {
     expect(result.data[0]["name"]).to.be.equal("Mary");
     expect(result.pages).to.be.equal(1);
   });
+
+  it("Executes Updates", async () => {
+    const config : ProtocolConfigParams = { dbConnectionString: await generateUri(), databaseName: "SomeDb" };
+    const mainClassInstance = new MongoDbProtocol(config, sampleSchema);
+
+    await mainClassInstance.initialize();
+    const inserted = await mainClassInstance.insert("abcd", { data: { name: "john", age: 22 } });
+
+    const resultId = await mainClassInstance.updateById("abcd", { data: { name: "Johnny" }, id: inserted.insertedId });
+    const unmodifiedAge = (await mainClassInstance.findById("abcd", { id: inserted.insertedId })).data["age"];
+
+    const resultQuery = await mainClassInstance.update("abcd", { data: { age: 23 },
+      query: { age: { equal_to: 22 } } },
+    );
+    const unmodifiedName = (await mainClassInstance.findById("abcd", { id: inserted.insertedId })).data["name"];
+
+    expect(unmodifiedAge).to.be.equal(22);
+    expect(unmodifiedName).to.be.equal("Johnny");
+    expect(resultQuery.affectedEntities).to.be.equal(1);
+    expect(resultId.success && resultQuery.success).to.be.true;
+  });
 });
