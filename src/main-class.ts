@@ -11,6 +11,7 @@ import * as Mongo from "mongodb";
 import { SchemaType } from "@meta-system/meta-protocol-helper/dist/src/type/schema-types";
 import { SchemaRepo } from "./schema-repo";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder";
+import { createObjectId } from "./functions/createObjectId";
 
 export interface ProtocolConfigParams {
   dbConnectionString : string;
@@ -51,7 +52,7 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     this.db = this.connection.db(this.protocolConfiguration.databaseName);
 
     await this.db.command({ ping: 1 });
-    console.log(`[Mongo DB Protocol] Success connnecting to "${this.protocolConfiguration.databaseName}"`);
+    console.log(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
 
     this.schemaRepo = new SchemaRepo(this.schemaList, this.db, this.checkSchemaDiff);
     await this.schemaRepo.bootDb();
@@ -66,7 +67,9 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
   }
 
   getProtocolPublicMethods () : Record<string, Function> {
-    return {};
+    return {
+      createObjectId: createObjectId,
+    };
   }
 
   public async insert (schemaId : string, parameters : { data : unknown })
@@ -93,7 +96,7 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
       .updateOne({ _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data });
 
     return {
-      success: result.modifiedCount > 0,
+      success: result.matchedCount > 0,
     };
   }
 

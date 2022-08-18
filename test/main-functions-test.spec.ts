@@ -2,6 +2,7 @@ import { SchemaList } from "@meta-system/meta-protocol-helper/dist/src/db-protoc
 import { MongoDbProtocol, ProtocolConfigParams } from "main-class";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { expect } from "chai";
+import { ObjectId } from "mongodb";
 
 const sampleSchema : SchemaList = [
   {
@@ -92,5 +93,20 @@ describe("General Tests", () => {
     expect(unmodifiedName).to.be.equal("Johnny");
     expect(resultQuery.affectedEntities).to.be.equal(1);
     expect(resultId.success && resultQuery.success).to.be.true;
+  });
+
+  it.only("Tests protocol functions", async () => {
+    const config : ProtocolConfigParams = { dbConnectionString: await generateUri(), databaseName: "SomeDb" };
+    const mainClassInstance = new MongoDbProtocol(config, sampleSchema);
+
+    await mainClassInstance.initialize();
+
+    const stringId = "62eb0da09be812a2ffb6804c";
+    const methods = mainClassInstance.getProtocolPublicMethods();
+    const objectId : ObjectId = methods["createObjectId"]({ stringId });
+
+    expect(objectId instanceof ObjectId).to.be.true;
+    expect(typeof stringId).to.be.equal("string");
+    expect(objectId.toString()).to.be.equal(stringId);
   });
 });
