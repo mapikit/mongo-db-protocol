@@ -13,6 +13,10 @@ import { SchemaRepo } from "./schema-repo";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder";
 import { createObjectId } from "./functions/createObjectId";
 
+type PublicMethodsType = {
+  createObjectId : typeof createObjectId;
+}
+
 export interface ProtocolConfigParams {
   dbConnectionString : string;
   databaseName : string;
@@ -66,7 +70,7 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     delete this.db;
   }
 
-  getProtocolPublicMethods () : Record<string, Function> {
+  getProtocolPublicMethods () : PublicMethodsType {
     return {
       createObjectId: createObjectId,
     };

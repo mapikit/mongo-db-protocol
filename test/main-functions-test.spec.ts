@@ -95,7 +95,7 @@ describe("General Tests", () => {
     expect(resultId.success && resultQuery.success).to.be.true;
   });
 
-  it.only("Tests protocol functions", async () => {
+  it("Tests protocol functions", async () => {
     const config : ProtocolConfigParams = { dbConnectionString: await generateUri(), databaseName: "SomeDb" };
     const mainClassInstance = new MongoDbProtocol(config, sampleSchema);
 
@@ -103,7 +103,7 @@ describe("General Tests", () => {
 
     const stringId = "62eb0da09be812a2ffb6804c";
     const methods = mainClassInstance.getProtocolPublicMethods();
-    const objectId : ObjectId = methods["createObjectId"]({ stringId });
+    const objectId : ObjectId = methods.createObjectId({ stringId }).objectId;
 
     expect(objectId instanceof ObjectId).to.be.true;
     expect(typeof stringId).to.be.equal("string");

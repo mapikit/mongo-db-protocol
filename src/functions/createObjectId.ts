@@ -1,10 +1,11 @@
 import { ObjectId } from "mongodb";
 
-type CreateError = {
-  errorMessage : string
+type CreateObjectIdType = {
+  errorMessage ?: string;
+  objectId ?: ObjectId;
 }
 
-export function createObjectId (input : {stringId : string}) : ObjectId | CreateError {
+export function createObjectId (input : {stringId : string}) : CreateObjectIdType {
   if(!ObjectId.isValid(input.stringId)) return { errorMessage: "Input must be a 12 char string or 24 char hex id" };
-  return new ObjectId(input.stringId);
+  return { objectId: new ObjectId(input.stringId) };
 };
