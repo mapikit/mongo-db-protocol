@@ -129,6 +129,7 @@ export class MongoSchemaQueryBuilder {
       "boolean": QueryTypesEnum.booleanArray,
       "date": QueryTypesEnum.date,
       "object": QueryTypesEnum.object,
+      "cloudedObject": QueryTypesEnum.object,
       "array.number": QueryTypesEnum.numberArray,
       "array.string": QueryTypesEnum.stringArray,
       "array.boolean": QueryTypesEnum.booleanArray,

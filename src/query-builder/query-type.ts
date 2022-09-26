@@ -95,4 +95,12 @@ export interface TypeDateArrayQuery extends TypeArrayQuery<Date>, TypeDateQuery 
   contains_less_or_equal_to ?: Date;
 }
 
+export interface TypeObjectQuery {
+  equal_to ?: object;
+  not_equal_to ?: object;
+  one_of ?: object[];
+  not_one_of ?: object[];
+  exists ?: boolean;
+}
+
 export type TypeObjectArrayQuery = TypeArrayQuery<object>;

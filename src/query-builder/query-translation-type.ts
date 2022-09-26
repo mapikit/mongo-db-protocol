@@ -10,7 +10,8 @@ import { TypeStringQuery,
   TypeBooleanArrayQuery,
   TypeDateArrayQuery,
   TypeObjectArrayQuery,
-  QueryType } from "./query-type";
+  QueryType,
+  TypeObjectQuery } from "./query-type";
 
 export const valueToReplaceString = "__value__";
 export const valueToReplaceStringArray = [valueToReplaceString];
@@ -142,6 +143,13 @@ dateArrayQueryTranslationMap.set("one_of", Object.freeze({ "$in": valueToReplace
 dateArrayQueryTranslationMap.set("not_one_of", Object.freeze({ "$nin": valueToReplaceDateArray }));
 dateArrayQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
 
+export const objectQueryTranslationMap : Map<keyof TypeObjectQuery, FilterOperators<object>> = new Map();
+objectQueryTranslationMap.set("equal_to", Object.freeze({ "$eq": valueToReplaceDate }));
+objectQueryTranslationMap.set("not_equal_to", Object.freeze({ "$ne": valueToReplaceDate }));
+objectQueryTranslationMap.set("one_of", Object.freeze({ "$in": valueToReplaceDateArray }));
+objectQueryTranslationMap.set("not_one_of", Object.freeze({ "$nin": valueToReplaceDateArray }));
+objectQueryTranslationMap.set("exists", Object.freeze({ "$exists": valueToReplaceBoolean }));
+
 export const objectArrayQueryTranslationMap :
 Map<keyof TypeObjectArrayQuery, FilterOperators<Array<object>>> = new Map();
 objectArrayQueryTranslationMap.set("contains", Object.freeze({ "$all": [{ "$elemMatch": valueToReplaceObject }] }));
@@ -162,4 +170,5 @@ queryTranslationMap.set(QueryTypesEnum.stringArray, stringArrayQueryTranslationM
 queryTranslationMap.set(QueryTypesEnum.numberArray, numberArrayQueryTranslationMap);
 queryTranslationMap.set(QueryTypesEnum.booleanArray, booleanArrayQueryTranslationMap);
 queryTranslationMap.set(QueryTypesEnum.dateArray, dateArrayQueryTranslationMap);
+queryTranslationMap.set(QueryTypesEnum.object, objectQueryTranslationMap);
 queryTranslationMap.set(QueryTypesEnum.objectArray, objectArrayQueryTranslationMap);
