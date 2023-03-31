@@ -8,10 +8,10 @@ import {
   QueryOperationResponse } from "@meta-system/meta-protocol-helper";
 
 import * as Mongo from "mongodb";
-import { SchemaType } from "@meta-system/meta-protocol-helper/dist/src/type/schema-types";
-import { SchemaRepo } from "./schema-repo";
-import { MongoSchemaQueryBuilder } from "./query-builder/query-builder";
-import { createObjectId } from "./functions/createObjectId";
+import { SchemaRepo } from "./schema-repo.js";
+import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
+import { createObjectId } from "./functions/createObjectId.js";
+import { SchemaType } from "@meta-system/meta-protocol-helper/dist/type/schema-types.js";
 
 type PublicMethodsType = {
   createObjectId : typeof createObjectId;

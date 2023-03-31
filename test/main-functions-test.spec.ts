@@ -1,8 +1,8 @@
-import { SchemaList } from "@meta-system/meta-protocol-helper/dist/src/db-protocol";
-import { MongoDbProtocol, ProtocolConfigParams } from "main-class";
+import { MongoDbProtocol, ProtocolConfigParams } from "../src/main-class.js";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { expect } from "chai";
 import { ObjectId } from "mongodb";
+import { SchemaList } from "@meta-system/meta-protocol-helper/dist/db-protocol.js";
 
 const sampleSchema : SchemaList = [
   {

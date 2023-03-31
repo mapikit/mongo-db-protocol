@@ -1,10 +1,10 @@
 import { Filter, FilterOperators } from "mongodb";
-import { getObjectProperty } from "./get-object-property";
-import { queryTranslationMap } from "./query-translation-type";
-import { queryValueReplace } from "./query-value-replace";
+import { getObjectProperty } from "./get-object-property.js";
+import { queryTranslationMap } from "./query-translation-type.js";
+import { queryValueReplace } from "./query-value-replace.js";
 import { ObjectDefinition } from "@meta-system/object-definition";
-import { SchemaType } from "@meta-system/meta-protocol-helper/dist/src/type/schema-types";
 import { ComplexQuery, DBProtocol, QueryType, QueryTypesEnum } from "@meta-system/meta-protocol-helper";
+import { SchemaType } from "@meta-system/meta-protocol-helper/dist/type/schema-types.js";
 
 export class MongoSchemaQueryBuilder {
   private readonly schemaFormat : ObjectDefinition;

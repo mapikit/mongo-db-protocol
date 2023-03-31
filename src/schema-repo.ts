@@ -1,8 +1,8 @@
 import { DBProtocol } from "@meta-system/meta-protocol-helper";
-import { CompleteSchemaDiff } from "@meta-system/meta-protocol-helper/dist/src/db-protocols-tools/get-schema-diff";
-import { SchemaType } from "@meta-system/meta-protocol-helper/dist/src/type/schema-types";
+import { CompleteSchemaDiff } from "@meta-system/meta-protocol-helper/dist/db-protocols-tools/get-schema-diff.js";
+import { SchemaType } from "@meta-system/meta-protocol-helper/dist/type/schema-types.js";
 import { Collection, Db } from "mongodb";
-import { SchemaHistory, SchemaHistoryEntry } from "./schema-history";
+import { SchemaHistory, SchemaHistoryEntry } from "./schema-history.js";
 
 type SchemaDiffFunction = DBProtocol<unknown>["checkSchemaDiff"];
 

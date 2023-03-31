@@ -11,7 +11,8 @@ import { TypeStringQuery,
   TypeDateArrayQuery,
   TypeObjectArrayQuery,
   QueryType,
-  TypeObjectQuery } from "./query-type";
+  TypeObjectQuery } from "./query-type.js";
+
 
 export const valueToReplaceString = "__value__";
 export const valueToReplaceStringArray = [valueToReplaceString];

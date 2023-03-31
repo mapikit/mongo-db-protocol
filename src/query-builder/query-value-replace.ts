@@ -11,7 +11,7 @@ import { valueToReplaceObjectArray,
   valueToReplaceBooleanArray,
   valueToReplaceObject,
   innerRuleValueToReplace,
-} from "./query-translation-type";
+} from "./query-translation-type.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, max-lines-per-function
 export const queryValueReplace = <T>(query : FilterOperators<T>, replacer : any) :
