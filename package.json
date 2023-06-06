@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.6.0",
     "chai": "^4.3.7",
     "eslint": "^8.37.0",
     "eslint-friendly-formatter": "^4.0.1",
@@ -21,13 +22,9 @@
     "mocha": "^10.2.0",
     "mongodb-memory-server": "^8.12.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.3",
-    "@typescript-eslint/eslint-plugin": "^5.6.0"
+    "typescript": "^5.0.3"
   },
   "dependencies": {
-    "@meta-system/meta-function-helper": "^0.4.5",
-    "@meta-system/meta-protocol-helper": "^0.4.2",
-    "@meta-system/object-definition": "^1.1.6",
-    "mongodb": "^5.1.0"
+    "mongodb": "^5.6.0"
   }
 }

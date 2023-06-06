@@ -1,17 +1,7 @@
-import {
-  DBProtocol,
-  BaseDBProtocolResponse,
-  QueryType,
-  CountResponse,
-  FindByIdResponse,
-  FindResponse,
-  QueryOperationResponse } from "@meta-system/meta-protocol-helper";
-
 import * as Mongo from "mongodb";
 import { SchemaRepo } from "./schema-repo.js";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
 import { createObjectId } from "./functions/createObjectId.js";
-import { SchemaType } from "@meta-system/meta-protocol-helper/dist/type/schema-types.js";
 
 type PublicMethodsType = {
   createObjectId : typeof createObjectId;
@@ -22,17 +12,12 @@ export interface ProtocolConfigParams {
   databaseName : string;
 }
 
-export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
+export class MongoDbProtocol {
   private connection : Mongo.MongoClient;
   private db : Mongo.Db;
   private schemaRepo : SchemaRepo;
 
-  constructor (config : ProtocolConfigParams, schemaList : SchemaType[]) {
-    super(config, schemaList);
-
-
-    this.verifySchemaSupport = this.verifySchemaSupport.bind(this);
-    this.validateConfiguration = this.validateConfiguration.bind(this);
+  constructor (private readonly protocolConfiguration : ProtocolConfigParams) {
     this.initialize = this.initialize.bind(this);
     this.shutdown = this.shutdown.bind(this);
     this.insert = this.insert.bind(this);
@@ -43,10 +28,6 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     this.findById = this.findById.bind(this);
     this.find = this.find.bind(this);
     this.count = this.count.bind(this);
-  }
-
-  public verifySchemaSupport () : void {
-    this.schemaList;
   }
 
   public async initialize () : Promise<void> {
@@ -68,12 +49,6 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     delete this.schemaRepo;
     delete this.connection;
     delete this.db;
-  }
-
-  getProtocolPublicMethods () : PublicMethodsType {
-    return {
-      createObjectId: createObjectId,
-    };
   }
 
   public async insert (schemaId : string, parameters : { data : unknown })
