@@ -1,21 +1,25 @@
 import { Collection, Db } from "mongodb";
 import { SchemaHistory, SchemaHistoryEntry } from "./schema-history.js";
 
+export type SchemaType = {
+  name : string;
+  identifier : string;
+  format : Object; // Object Definition
+}
+
 export class SchemaRepo {
   private readonly schemaHistoryCollectionName = "__DBSchemaVersioning";
   private readonly collections : Map<string, Collection> = new Map();
   private readonly schemas : Map<string, SchemaType> = new Map();
-  private cachedLatestSchemaVersion : SchemaHistory;
+  private cachedLatestSchemaVersion ?: SchemaHistory;
 
   public constructor (
     private readonly schemaList : SchemaType[],
     private readonly connectedDb : Db,
-    public readonly schemaDiffFunction : SchemaDiffFunction,
   ) {
     this.getCollection = this.getCollection.bind(this);
     this.getSchema = this.getSchema.bind(this);
     this.bootDb = this.bootDb.bind(this);
-    this.compareSchemas = this.compareSchemas.bind(this);
     this.getNewSchemas = this.getNewSchemas.bind(this);
     this.getRenamedSchemas = this.getRenamedSchemas.bind(this);
     this.saveSchemaVersion = this.saveSchemaVersion.bind(this);
@@ -23,8 +27,9 @@ export class SchemaRepo {
   }
 
   public async bootDb () : Promise<void> {
-    const newSchemas = await this.getNewSchemas();
-    const renamedSchemas = await this.getRenamedSchemas();
+    await this.getLatestSchemaVersion();
+    const newSchemas = this.getNewSchemas();
+    const renamedSchemas = this.getRenamedSchemas();
 
     for (const newSchema of newSchemas) {
       await this.connectedDb.createCollection(newSchema.name);
@@ -42,48 +47,30 @@ export class SchemaRepo {
     });
   }
 
-  private async compareSchemas () : Promise<CompleteSchemaDiff[]> {
-    const currentSchemas = await this.getLatestSchemaVersion();
-    const comparison = this.schemaDiffFunction(currentSchemas?.schemaList || [], this.schemaList);
-
-    return Object.values(comparison);
+  private getNewSchemas () : SchemaType[] {
+    return this.schemaList.filter((schema) => {
+      return this.cachedLatestSchemaVersion?.schemaList
+        ? !this.cachedLatestSchemaVersion.schemaList.find((item) => item.identifier === schema.identifier)
+        : true
+    })
   }
 
-  private async getNewSchemas () : Promise<SchemaType[]> {
-    const comparedSchemas = await this.compareSchemas();
+  private getRenamedSchemas () : { identifier : string, newName : string, oldName : string }[] {
+    if (!this.cachedLatestSchemaVersion) {
+      return []
+    }
 
-    const addedSchemas = comparedSchemas.filter((change) => {
-      return change.changes
-        .filter((item) => item.action === "added" && item.path === "FULL_SCHEMA")
-        .length === 1;
-    }).map((diff) => ({
-      format: diff.changes[0].newState["format"],
-      name: diff.changes[0].newState["name"],
-      dbProtocol: diff.changes[0].newState["dbProtocol"],
-      identifier: diff.changes[0].newState["identifier"],
-    }));
+    const results = [];
 
-    return addedSchemas;
-  }
+    for (const schema of this.schemaList) {
+      const oldSchema = this.cachedLatestSchemaVersion.schemaList
+        .find((item) => item.identifier === schema.identifier )
+      if (oldSchema.name !== schema.name) {
+        results.push({ identifier: schema.identifier, newName: schema.name, oldName: oldSchema.name })
+      }
+    }
 
-  // eslint-disable-next-line max-lines-per-function
-  private async getRenamedSchemas () : Promise<{ identifier : string, newName : string, oldName : string }[]> {
-    const comparedSchemas = await this.compareSchemas();
-    const latestVersion = await this.getLatestSchemaVersion();
-
-    const renamedSchemas = comparedSchemas.filter((change) => {
-      return change.changes
-        .filter((item) => item.action === "changed" && item.path === "name")
-        .length !== 0;
-    }).map((diff) => ({
-      newName: diff.changes[0].newState as string,
-      identifier: diff.identifier,
-      oldName: latestVersion.schemaList
-        .find((element) => element.identifier === diff.identifier)
-        .name,
-    }));
-
-    return renamedSchemas;
+    return results;
   }
 
   private async saveSchemaVersion () : Promise<void> {

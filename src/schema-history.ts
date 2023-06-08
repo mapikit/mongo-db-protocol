@@ -1,4 +1,4 @@
-import { SchemaType } from "@meta-system/meta-protocol-helper/dist/type/schema-types.js";
+import { SchemaType } from "./schema-repo.js";
 
 export interface SchemaHistoryEntry {
   creationDate : string; // ISO Date
