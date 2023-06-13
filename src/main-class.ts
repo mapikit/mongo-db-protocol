@@ -1,10 +1,16 @@
 import * as Mongo from "mongodb";
-import { SchemaRepo } from "./schema-repo.js";
+import { SchemaRepo, SchemaType } from "./schema-repo.js";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
-import { createObjectId } from "./functions/createObjectId.js";
 
-type PublicMethodsType = {
-  createObjectId : typeof createObjectId;
+type LoggerFunction = (...data : unknown[]) => void
+type Logger = {
+  fatal : LoggerFunction;
+  success : LoggerFunction;
+  operation : LoggerFunction;
+  error : LoggerFunction;
+  warn : LoggerFunction;
+  info : LoggerFunction;
+  debug : LoggerFunction;
 }
 
 export interface ProtocolConfigParams {
@@ -17,7 +23,11 @@ export class MongoDbProtocol {
   private db : Mongo.Db;
   private schemaRepo : SchemaRepo;
 
-  constructor (private readonly protocolConfiguration : ProtocolConfigParams) {
+  constructor (
+    private readonly protocolConfiguration : ProtocolConfigParams,
+    public readonly logger : Logger,
+    private readonly schemaList : SchemaType[]
+  ) {
     this.initialize = this.initialize.bind(this);
     this.shutdown = this.shutdown.bind(this);
     this.insert = this.insert.bind(this);
@@ -37,9 +47,9 @@ export class MongoDbProtocol {
     this.db = this.connection.db(this.protocolConfiguration.databaseName);
 
     await this.db.command({ ping: 1 });
-    console.log(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
+    this.logger.info(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
 
-    this.schemaRepo = new SchemaRepo(this.schemaList, this.db, this.checkSchemaDiff);
+    this.schemaRepo = new SchemaRepo(this.schemaList, this.db);
     await this.schemaRepo.bootDb();
   }
 
@@ -51,9 +61,9 @@ export class MongoDbProtocol {
     delete this.db;
   }
 
-  public async insert (schemaId : string, parameters : { data : unknown })
-    : Promise<BaseDBProtocolResponse & { insertedId : string }> {
-    const result = await this.schemaRepo.getCollection(schemaId).insertOne(parameters.data);
+  public async insert (schemaIdentifier : string, parameters : { data : unknown })
+    : Promise<{success : boolean; insertedId : string }> {
+    const result = await this.schemaRepo.getCollection(schemaIdentifier).insertOne(parameters.data);
 
     return {
       success: result.insertedId !== undefined,
@@ -61,17 +71,17 @@ export class MongoDbProtocol {
     };
   }
 
-  public async deleteById (schemaId : string, parameters : { id : string }) : Promise<BaseDBProtocolResponse> {
-    await this.schemaRepo.getCollection(schemaId).deleteOne({ _id: new Mongo.ObjectId(parameters.id) });
+  public async deleteById (schemaIdentifier : string, parameters : { id : string }) : Promise<BaseDBProtocolResponse> {
+    await this.schemaRepo.getCollection(schemaIdentifier).deleteOne({ _id: new Mongo.ObjectId(parameters.id) });
 
     return {
       success: true,
     };
   }
 
-  public async updateById (schemaId : string, parameters : { data : unknown, id : string })
+  public async updateById (schemaIdentifier : string, parameters : { data : unknown, id : string })
     : Promise<BaseDBProtocolResponse> {
-    const result = await this.schemaRepo.getCollection(schemaId)
+    const result = await this.schemaRepo.getCollection(schemaIdentifier)
       .updateOne({ _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data });
 
     return {
@@ -79,13 +89,13 @@ export class MongoDbProtocol {
     };
   }
 
-  public async update (schemaId : string, parameters : { data : unknown, query : QueryType })
+  public async update (schemaIdentifier : string, parameters : { data : unknown, query : QueryType })
     : Promise<QueryOperationResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
+    const schema = this.schemaRepo.getSchema(schemaIdentifier);
     const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
       .getFullMongoQuery();
 
-    const result = await this.schemaRepo.getCollection(schemaId).updateMany(builtQuery, { $set: parameters.data });
+    const result = await this.schemaRepo.getCollection(schemaIdentifier).updateMany(builtQuery, { $set: parameters.data });
 
     return {
       success: result !== undefined,
@@ -93,12 +103,12 @@ export class MongoDbProtocol {
     };
   }
 
-  public async delete (schemaId : string, parameters : { query : QueryType }) : Promise<QueryOperationResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
+  public async delete (schemaIdentifier : string, parameters : { query : QueryType }) : Promise<QueryOperationResponse> {
+    const schema = this.schemaRepo.getSchema(schemaIdentifier);
     const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
       .getFullMongoQuery();
 
-    const result = await this.schemaRepo.getCollection(schemaId).deleteMany(builtQuery);
+    const result = await this.schemaRepo.getCollection(schemaIdentifier).deleteMany(builtQuery);
 
     return {
       success: result !== undefined,
@@ -106,8 +116,8 @@ export class MongoDbProtocol {
     };
   }
 
-  public async findById (schemaId : string, parameters : { id : string }) : Promise<FindByIdResponse> {
-    const result = await this.schemaRepo.getCollection(schemaId).findOne({ _id: new Mongo.ObjectId(parameters.id) });
+  public async findById (schemaIdentifier : string, parameters : { id : string }) : Promise<FindByIdResponse> {
+    const result = await this.schemaRepo.getCollection(schemaIdentifier).findOne({ _id: new Mongo.ObjectId(parameters.id) });
 
     return {
       success: true,
@@ -116,13 +126,13 @@ export class MongoDbProtocol {
   }
 
   // eslint-disable-next-line max-lines-per-function
-  public async find (schemaId : string, parameters : { query : QueryType, limit ?: number, offset ?: number })
+  public async find (schemaIdentifier : string, parameters : { query : QueryType, limit ?: number, offset ?: number })
     : Promise<FindResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
+    const schema = this.schemaRepo.getSchema(schemaIdentifier);
     const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
       .getFullMongoQuery();
 
-    let partialResult = this.schemaRepo.getCollection(schemaId).find(builtQuery);
+    let partialResult = this.schemaRepo.getCollection(schemaIdentifier).find(builtQuery);
 
     if (parameters.limit) partialResult = partialResult.limit(parameters.limit);
     if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
@@ -139,11 +149,11 @@ export class MongoDbProtocol {
     };
   }
 
-  public async count (schemaId : string, query : QueryType) : Promise<CountResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
+  public async count (schemaIdentifier : string, query : QueryType) : Promise<CountResponse> {
+    const schema = this.schemaRepo.getSchema(schemaIdentifier);
     const builtQuery = new MongoSchemaQueryBuilder(query, this.getQueryPerProperty, schema).getFullMongoQuery();
 
-    const result = await this.schemaRepo.getCollection(schemaId).countDocuments(builtQuery);
+    const result = await this.schemaRepo.getCollection(schemaIdentifier).countDocuments(builtQuery);
 
     return {
       success: result !== undefined,
