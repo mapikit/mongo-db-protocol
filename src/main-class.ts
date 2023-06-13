@@ -1,6 +1,7 @@
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
+import { SchemaDeleteByIdFunction, SchemaInsertFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
 type Logger = {
@@ -16,12 +17,14 @@ type Logger = {
 export interface ProtocolConfigParams {
   dbConnectionString : string;
   databaseName : string;
+  usedSchemas ?: { identifier : string, keyField ?: string }[] 
 }
 
 export class MongoDbProtocol {
   private connection : Mongo.MongoClient;
   private db : Mongo.Db;
   private schemaRepo : SchemaRepo;
+  private schemaKeyMap = new Map();
 
   constructor (
     private readonly protocolConfiguration : ProtocolConfigParams,
@@ -30,14 +33,21 @@ export class MongoDbProtocol {
   ) {
     this.initialize = this.initialize.bind(this);
     this.shutdown = this.shutdown.bind(this);
-    this.insert = this.insert.bind(this);
-    this.deleteById = this.deleteById.bind(this);
+    this.getSchemaInsertFunction = this.getSchemaInsertFunction.bind(this);
+    this.getSchemaDeleteByKeyFunction = this.getSchemaDeleteByKeyFunction.bind(this);
     this.updateById = this.updateById.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
     this.findById = this.findById.bind(this);
     this.find = this.find.bind(this);
     this.count = this.count.bind(this);
+
+    this.schemaList.forEach((schema) => {
+      const defaultKey = "_id";
+      const schemaKey = this.protocolConfiguration.usedSchemas
+        ?.find((usedSchema) => usedSchema.identifier === schema.identifier).keyField ?? defaultKey
+      this.schemaKeyMap.set(schema.identifier, schemaKey)
+    })
   }
 
   public async initialize () : Promise<void> {
@@ -61,22 +71,27 @@ export class MongoDbProtocol {
     delete this.db;
   }
 
-  public async insert (schemaIdentifier : string, parameters : { data : unknown })
-    : Promise<{success : boolean; insertedId : string }> {
-    const result = await this.schemaRepo.getCollection(schemaIdentifier).insertOne(parameters.data);
+  public getSchemaInsertFunction (schemaIdentifier : string) : SchemaInsertFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      const result = await schemaCollection.insertOne(parameters.data);
 
-    return {
-      success: result.insertedId !== undefined,
-      insertedId: result.insertedId.toString(),
+      return {
+        success: result.insertedId !== undefined,
+        insertedKey: result.insertedId.toString(),
+      };
     };
   }
 
-  public async deleteById (schemaIdentifier : string, parameters : { id : string }) : Promise<BaseDBProtocolResponse> {
-    await this.schemaRepo.getCollection(schemaIdentifier).deleteOne({ _id: new Mongo.ObjectId(parameters.id) });
+  public getSchemaDeleteByKeyFunction (schemaIdentifier : string) : SchemaDeleteByIdFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      await schemaCollection.deleteOne({ _id: new Mongo.ObjectId(parameters.key) });
 
-    return {
-      success: true,
-    };
+      return {
+        deleted: true,
+      };
+    }
   }
 
   public async updateById (schemaIdentifier : string, parameters : { data : unknown, id : string })
