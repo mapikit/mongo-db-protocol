@@ -17,7 +17,7 @@ type Logger = {
 export interface ProtocolConfigParams {
   dbConnectionString : string;
   databaseName : string;
-  usedSchemas ?: { identifier : string, keyField ?: string }[] 
+  usedSchemas ?: { identifier : string }[] 
 }
 
 export class MongoDbProtocol {

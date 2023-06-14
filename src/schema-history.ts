@@ -1,10 +1,8 @@
 import { SchemaType } from "./schema-repo.js";
 
-export type IndexedSchemaHistoryEntry = SchemaType & { key: string }
-
 export interface SchemaHistoryEntry {
   creationDate : string; // ISO Date
-  schemaList : IndexedSchemaHistoryEntry[]
+  schemaList : SchemaType[]
 }
 
 export class SchemaHistory {
@@ -12,7 +10,7 @@ export class SchemaHistory {
   private timeSet = false;
 
   public constructor (
-    public readonly schemaList : IndexedSchemaHistoryEntry[],
+    public readonly schemaList : SchemaType[],
   ) {}
 
   public getHistoryEntry () : SchemaHistoryEntry {
