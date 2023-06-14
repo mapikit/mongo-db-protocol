@@ -1,5 +1,5 @@
 import { Collection, Db } from "mongodb";
-import { SchemaHistory, SchemaHistoryEntry } from "./schema-history.js";
+import { IndexedSchemaHistoryEntry, SchemaHistory, SchemaHistoryEntry } from "./schema-history.js";
 
 export type SchemaType = {
   name : string;
@@ -12,10 +12,12 @@ export class SchemaRepo {
   private readonly collections : Map<string, Collection> = new Map();
   private readonly schemas : Map<string, SchemaType> = new Map();
   private cachedLatestSchemaVersion ?: SchemaHistory;
+  private readonly indexedSchemas : IndexedSchemaHistoryEntry[] = [];
 
   public constructor (
     private readonly schemaList : SchemaType[],
     private readonly connectedDb : Db,
+    private readonly schemaKeys : Map<string,string>
   ) {
     this.getCollection = this.getCollection.bind(this);
     this.getSchema = this.getSchema.bind(this);
@@ -24,6 +26,10 @@ export class SchemaRepo {
     this.getRenamedSchemas = this.getRenamedSchemas.bind(this);
     this.saveSchemaVersion = this.saveSchemaVersion.bind(this);
     this.getLatestSchemaVersion = this.getLatestSchemaVersion.bind(this);
+
+  this.schemaList.forEach((schema) => {
+    this.indexedSchemas.push({ ...schema, key: this.schemaKeys.get(schema.identifier) })
+  })
   }
 
   public async bootDb () : Promise<void> {
@@ -39,12 +45,30 @@ export class SchemaRepo {
       await this.connectedDb.renameCollection(renamedSchema.oldName, renamedSchema.newName);
     }
 
+    for (const schema of this.indexedSchemas) {
+      await this.setIndex(schema);
+    }
+
     await this.saveSchemaVersion();
 
     this.schemaList.forEach((schema) => {
       this.collections.set(schema.identifier, this.connectedDb.collection(schema.name));
       this.schemas.set(schema.identifier, schema);
     });
+  }
+
+  private async setIndex (schema : IndexedSchemaHistoryEntry) : Promise<void> {
+    const collection = this.getCollection(schema.identifier);
+    const oldSchema = this.cachedLatestSchemaVersion.schemaList
+      .find((item) => item.identifier === schema.identifier );
+
+    const oldIndexIsConfigured = oldSchema && await collection.indexExists(oldSchema.key)
+    
+    if (oldIndexIsConfigured) {
+      await collection.dropIndex(oldSchema.key);
+    }
+
+    await collection.createIndex(schema.key, { unique: true });
   }
 
   private getNewSchemas () : SchemaType[] {
@@ -75,7 +99,7 @@ export class SchemaRepo {
 
   private async saveSchemaVersion () : Promise<void> {
     const collection = this.connectedDb.collection(this.schemaHistoryCollectionName);
-    const schemaHistory = new SchemaHistory(this.schemaList);
+    const schemaHistory = new SchemaHistory(this.indexedSchemas);
 
     await collection.insertOne(schemaHistory.getHistoryEntry());
   }

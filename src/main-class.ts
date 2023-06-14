@@ -1,7 +1,7 @@
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
-import { SchemaDeleteByIdFunction, SchemaInsertFunction } from "./main-types.js";
+import { SchemaDeleteByKeyFunction, SchemaInsertFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
 type Logger = {
@@ -59,7 +59,7 @@ export class MongoDbProtocol {
     await this.db.command({ ping: 1 });
     this.logger.info(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
 
-    this.schemaRepo = new SchemaRepo(this.schemaList, this.db);
+    this.schemaRepo = new SchemaRepo(this.schemaList, this.db, this.schemaKeyMap);
     await this.schemaRepo.bootDb();
   }
 
@@ -83,7 +83,7 @@ export class MongoDbProtocol {
     };
   }
 
-  public getSchemaDeleteByKeyFunction (schemaIdentifier : string) : SchemaDeleteByIdFunction {
+  public getSchemaDeleteByKeyFunction (schemaIdentifier : string) : SchemaDeleteByKeyFunction {
     const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
     return async (parameters) => {
       await schemaCollection.deleteOne({ _id: new Mongo.ObjectId(parameters.key) });
