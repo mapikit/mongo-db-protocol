@@ -1,7 +1,7 @@
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
-import { SchemaDeleteByKeyFunction, SchemaInsertFunction } from "./main-types.js";
+import { SchemaDeleteByIdFunction, SchemaFindByIdFunction, SchemaInsertFunction, SchemaUpdateByIdFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
 type Logger = {
@@ -34,7 +34,7 @@ export class MongoDbProtocol {
     this.initialize = this.initialize.bind(this);
     this.shutdown = this.shutdown.bind(this);
     this.getSchemaInsertFunction = this.getSchemaInsertFunction.bind(this);
-    this.getSchemaDeleteByKeyFunction = this.getSchemaDeleteByKeyFunction.bind(this);
+    this.getSchemaDeleteByIdFunction = this.getSchemaDeleteByIdFunction.bind(this);
     this.updateById = this.updateById.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
@@ -59,7 +59,7 @@ export class MongoDbProtocol {
     await this.db.command({ ping: 1 });
     this.logger.info(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
 
-    this.schemaRepo = new SchemaRepo(this.schemaList, this.db, this.schemaKeyMap);
+    this.schemaRepo = new SchemaRepo(this.schemaList, this.db);
     await this.schemaRepo.bootDb();
   }
 
@@ -83,10 +83,10 @@ export class MongoDbProtocol {
     };
   }
 
-  public getSchemaDeleteByKeyFunction (schemaIdentifier : string) : SchemaDeleteByKeyFunction {
+  public getSchemaDeleteByIdFunction (schemaIdentifier : string) : SchemaDeleteByIdFunction {
     const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
     return async (parameters) => {
-      await schemaCollection.deleteOne({ _id: new Mongo.ObjectId(parameters.key) });
+      await schemaCollection.deleteOne({ _id: new Mongo.ObjectId(parameters.id) });
 
       return {
         deleted: true,
@@ -94,14 +94,27 @@ export class MongoDbProtocol {
     }
   }
 
-  public async updateById (schemaIdentifier : string, parameters : { data : unknown, id : string })
-    : Promise<BaseDBProtocolResponse> {
-    const result = await this.schemaRepo.getCollection(schemaIdentifier)
-      .updateOne({ _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data });
+  public updateById (schemaIdentifier : string) : SchemaUpdateByIdFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      const result = await schemaCollection.updateOne({ _id: new Mongo.ObjectId(parameters.id)}, { $set: parameters.data } )
 
-    return {
-      success: result.matchedCount > 0,
-    };
+      return {
+        success: result.modifiedCount > 0
+      }
+    }
+  }
+
+  public findById (schemaIdentifier : string) : SchemaFindByIdFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      const result = schemaCollection.findOne({ _id: new Mongo.ObjectId(parameters.id) })
+
+      return {
+        success: true,
+        data: result,
+      };
+    }
   }
 
   public async update (schemaIdentifier : string, parameters : { data : unknown, query : QueryType })
@@ -128,15 +141,6 @@ export class MongoDbProtocol {
     return {
       success: result !== undefined,
       affectedEntities: result.deletedCount,
-    };
-  }
-
-  public async findById (schemaIdentifier : string, parameters : { id : string }) : Promise<FindByIdResponse> {
-    const result = await this.schemaRepo.getCollection(schemaIdentifier).findOne({ _id: new Mongo.ObjectId(parameters.id) });
-
-    return {
-      success: true,
-      data: result,
     };
   }
 
