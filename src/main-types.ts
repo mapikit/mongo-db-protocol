@@ -12,10 +12,14 @@ export const schemaDeleteByIdFunctionDefinition = {
 export type SchemaUpdateByIdFunction = (parameters: { id : string }) => Promise<{ success : boolean }>;
 export const schemaUpdateByIdFunctionDefinition = {
   // TODO
-}
+};
 
 export type SchemaFindByIdFunction = (parameters: { id : string }) => Promise<{ success : boolean, data : unknown }>;
 export const schemaFindByIdFunctionDefinition = {
   // TODO
-}
+};
 
+export type SchemaFindFunction = (parameters: { query: object, limit ?: number, offset ?: number}) => Promise<{ data: unknown[], success: boolean }>;
+export const schemaFindFunctionDefinition = {
+  // TODO
+};

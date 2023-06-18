@@ -1,7 +1,7 @@
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
 import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
-import { SchemaDeleteByIdFunction, SchemaFindByIdFunction, SchemaInsertFunction, SchemaUpdateByIdFunction } from "./main-types.js";
+import { SchemaDeleteByIdFunction, SchemaFindByIdFunction, SchemaFindFunction, SchemaInsertFunction, SchemaUpdateByIdFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
 type Logger = {
@@ -145,27 +145,26 @@ export class MongoDbProtocol {
   }
 
   // eslint-disable-next-line max-lines-per-function
-  public async find (schemaIdentifier : string, parameters : { query : QueryType, limit ?: number, offset ?: number })
-    : Promise<FindResponse> {
-    const schema = this.schemaRepo.getSchema(schemaIdentifier);
-    const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
-      .getFullMongoQuery();
+  public find (schemaIdentifier : string) : SchemaFindFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    let partialResult = this.schemaRepo.getCollection(schemaIdentifier).find(builtQuery);
+    const result = async (parameters) => {
+      let partialResult = collection.find(parameters.query);
 
-    if (parameters.limit) partialResult = partialResult.limit(parameters.limit);
-    if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
+      if (parameters.limit) partialResult = partialResult.limit(parameters.limit);
+      if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
+      const data = await partialResult.toArray()
+      const totalCount = data.length;
+      const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
 
-    const totalCount = await partialResult.count();
-    const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
-    const result = [];
-    await partialResult.forEach((element) => { result.push(element); });
+      return {
+        data: [],
+        success: true,
+        pages,
+      }
+    }
 
-    return {
-      success: partialResult !== undefined,
-      data: result,
-      pages,
-    };
+    return result;
   }
 
   public async count (schemaIdentifier : string, query : QueryType) : Promise<CountResponse> {
