@@ -2,11 +2,10 @@ import { MongoDbProtocol, ProtocolConfigParams } from "../src/main-class.js";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { expect } from "chai";
 import { ObjectId } from "mongodb";
-import { SchemaList } from "@meta-system/meta-protocol-helper/dist/db-protocol.js";
+import { SchemaType } from "schema-repo.js";
 
-const sampleSchema : SchemaList = [
+const sampleSchema : SchemaType[] = [
   {
-    "dbProtocol": "1234",
     "format": {
       name: { type: "string", required: true },
       age: { type: "number", required: true },
@@ -16,9 +15,8 @@ const sampleSchema : SchemaList = [
   },
 ];
 
-const dollarSchema : SchemaList = [
+const dollarSchema : SchemaType[] = [
   {
-    "dbProtocol": "1234",
     "format": {
       dollarBillsInVirtualWallet: { "type": "array", "subtype": "number" },
       name: { type: "string" },

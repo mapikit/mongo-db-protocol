@@ -1,6 +1,5 @@
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
-import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
 import { SchemaDeleteByIdFunction, SchemaFindByIdFunction, SchemaFindFunction, SchemaInsertFunction, SchemaUpdateByIdFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
@@ -17,14 +16,15 @@ type Logger = {
 export interface ProtocolConfigParams {
   dbConnectionString : string;
   databaseName : string;
-  usedSchemas ?: { identifier : string }[] 
+  usedSchemas ?: { identifier : string }[]
+  defaultLimit ?: number;
 }
 
 export class MongoDbProtocol {
   private connection : Mongo.MongoClient;
   private db : Mongo.Db;
   private schemaRepo : SchemaRepo;
-  private schemaKeyMap = new Map();
+  private defaultLimit = 1000;
 
   constructor (
     private readonly protocolConfiguration : ProtocolConfigParams,
@@ -42,12 +42,7 @@ export class MongoDbProtocol {
     this.find = this.find.bind(this);
     this.count = this.count.bind(this);
 
-    this.schemaList.forEach((schema) => {
-      const defaultKey = "_id";
-      const schemaKey = this.protocolConfiguration.usedSchemas
-        ?.find((usedSchema) => usedSchema.identifier === schema.identifier).keyField ?? defaultKey
-      this.schemaKeyMap.set(schema.identifier, schemaKey)
-    })
+    this.defaultLimit = protocolConfiguration.defaultLimit ?? 1000;
   }
 
   public async initialize () : Promise<void> {
@@ -151,7 +146,7 @@ export class MongoDbProtocol {
     const result = async (parameters) => {
       let partialResult = collection.find(parameters.query);
 
-      if (parameters.limit) partialResult = partialResult.limit(parameters.limit);
+      if (parameters.limit) partialResult = partialResult.limit(parameters.limit ?? this.defaultLimit);
       if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
       const data = await partialResult.toArray()
       const totalCount = data.length;
