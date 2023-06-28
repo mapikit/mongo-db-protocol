@@ -7,6 +7,11 @@ export type FunctionDefinition = {
   functionName : string;
 }
 
+export type MetaSystemFunction = {
+  function : Function;
+  definition : FunctionDefinition;
+}
+
 // Schema functions types
 export type SchemaInsertFunction = (parameters : { data : unknown }) => Promise<{ success : boolean, insertedKey : string }>;
 export const schemaInsertFunctionDefinition : FunctionDefinition = {

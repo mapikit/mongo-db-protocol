@@ -1,4 +1,4 @@
-import { FunctionDefinition } from "../main-types.js";
+import { FunctionDefinition, MetaSystemFunction } from "../main-types.js";
 import { ObjectId } from "mongodb";
 
 type CreateObjectIdType = {
@@ -18,4 +18,9 @@ export const createObjectIdFunctionDefinition : FunctionDefinition = {
     "errorMessage": { "type": "string", "required": false },
     "objectId": { "type": "cloudedObject", "required": false }
   }
+}
+
+export const createObjectIdMetaSystemFunction : MetaSystemFunction = {
+  function: createObjectId,
+  definition: createObjectIdFunctionDefinition
 }
