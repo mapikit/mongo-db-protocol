@@ -35,10 +35,10 @@ export class MongoDbProtocol {
     this.shutdown = this.shutdown.bind(this);
     this.getSchemaInsertFunction = this.getSchemaInsertFunction.bind(this);
     this.getSchemaDeleteByIdFunction = this.getSchemaDeleteByIdFunction.bind(this);
-    this.updateById = this.updateById.bind(this);
+    this.getUpdateByIdFunction = this.getUpdateByIdFunction.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
-    this.findById = this.findById.bind(this);
+    this.getFindByIdFunction = this.getFindByIdFunction.bind(this);
     this.find = this.find.bind(this);
     this.count = this.count.bind(this);
 
@@ -89,7 +89,7 @@ export class MongoDbProtocol {
     }
   }
 
-  public updateById (schemaIdentifier : string) : SchemaUpdateByIdFunction {
+  public getUpdateByIdFunction (schemaIdentifier : string) : SchemaUpdateByIdFunction {
     const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
     return async (parameters) => {
       const result = await schemaCollection.updateOne({ _id: new Mongo.ObjectId(parameters.id)}, { $set: parameters.data } )
@@ -100,7 +100,7 @@ export class MongoDbProtocol {
     }
   }
 
-  public findById (schemaIdentifier : string) : SchemaFindByIdFunction {
+  public getFindByIdFunction (schemaIdentifier : string) : SchemaFindByIdFunction {
     const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
     return async (parameters) => {
       const result = schemaCollection.findOne({ _id: new Mongo.ObjectId(parameters.id) })

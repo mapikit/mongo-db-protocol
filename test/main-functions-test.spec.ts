@@ -79,13 +79,13 @@ describe("General Tests", () => {
     await mainClassInstance.initialize();
     const inserted = await mainClassInstance.insert("abcd", { data: { name: "john", age: 22 } });
 
-    const resultId = await mainClassInstance.updateById("abcd", { data: { name: "Johnny" }, id: inserted.insertedId });
-    const unmodifiedAge = (await mainClassInstance.findById("abcd", { id: inserted.insertedId })).data["age"];
+    const resultId = await mainClassInstance.getUpdateByIdFunction("abcd", { data: { name: "Johnny" }, id: inserted.insertedId });
+    const unmodifiedAge = (await mainClassInstance.getFindByIdFunction("abcd", { id: inserted.insertedId })).data["age"];
 
     const resultQuery = await mainClassInstance.update("abcd", { data: { age: 23 },
       query: { age: { equal_to: 22 } } },
     );
-    const unmodifiedName = (await mainClassInstance.findById("abcd", { id: inserted.insertedId })).data["name"];
+    const unmodifiedName = (await mainClassInstance.getFindByIdFunction("abcd", { id: inserted.insertedId })).data["name"];
 
     expect(unmodifiedAge).to.be.equal(22);
     expect(unmodifiedName).to.be.equal("Johnny");
