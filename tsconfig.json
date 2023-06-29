@@ -4,11 +4,11 @@
   "extends": "./tsconfig.base.json",
   "exclude": [
     "dist/*",
+    ".eslintrc.cjs"
   ],
   "include": [
     "index.ts",
     "src/**/*",
-    "test/**/*",
-    ".eslintrc.js"
+    "test/**/*"
   ]
 }

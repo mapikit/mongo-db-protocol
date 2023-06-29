@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+// Disabled because the type is elsewhere for the violations in this file
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
 import { SchemaCountFunction,
@@ -33,10 +35,11 @@ export class MongoDbProtocol {
   private schemaRepo : SchemaRepo;
   private defaultLimit = 1000;
 
+  // eslint-disable-next-line max-lines-per-function
   constructor (
     private readonly protocolConfiguration : ProtocolConfigParams,
     public readonly logger : Logger,
-    private readonly schemaList : SchemaType[]
+    private readonly schemaList : SchemaType[],
   ) {
     this.initialize = this.initialize.bind(this);
     this.shutdown = this.shutdown.bind(this);
@@ -93,30 +96,32 @@ export class MongoDbProtocol {
       return {
         deleted: true,
       };
-    }
+    };
   }
 
   public getUpdateByIdFunction (schemaIdentifier : string) : SchemaUpdateByIdFunction {
     const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
     return async (parameters) => {
-      const result = await schemaCollection.updateOne({ _id: new Mongo.ObjectId(parameters.id)}, { $set: parameters.data } )
+      const result = await schemaCollection.updateOne(
+        { _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data },
+      );
 
       return {
-        success: result.modifiedCount > 0
-      }
-    }
+        success: result.modifiedCount > 0,
+      };
+    };
   }
 
   public getFindByIdFunction (schemaIdentifier : string) : SchemaFindByIdFunction {
     const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
     return async (parameters) => {
-      const result = schemaCollection.findOne({ _id: new Mongo.ObjectId(parameters.id) })
+      const result = schemaCollection.findOne({ _id: new Mongo.ObjectId(parameters.id) });
 
       return {
         success: true,
         data: result,
       };
-    }
+    };
   }
 
   public getSchemaUpdateFunction (schemaIdentifier : string) : SchemaUpdateFunction {
@@ -124,12 +129,12 @@ export class MongoDbProtocol {
 
     return async (parameters) => {
       const result = await collection.updateMany(parameters.query, { $set: parameters.updatedData });
-  
+
       return {
         success: result !== undefined,
         updatedCount: result.modifiedCount,
       };
-    }
+    };
   }
 
   public getSchemaDeleteFunction (schemaIdentifier : string) : SchemaDeleteFunction {
@@ -142,7 +147,7 @@ export class MongoDbProtocol {
         success: result !== undefined,
         deletedCount: result.deletedCount,
       };
-    }
+    };
   }
 
   // eslint-disable-next-line max-lines-per-function
@@ -154,7 +159,7 @@ export class MongoDbProtocol {
 
       if (parameters.limit) partialResult = partialResult.limit(parameters.limit ?? this.defaultLimit);
       if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
-      const data = await partialResult.toArray()
+      const data = await partialResult.toArray();
       const totalCount = data.length;
       const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
 
@@ -162,8 +167,8 @@ export class MongoDbProtocol {
         data: [],
         success: true,
         pages,
-      }
-    }
+      };
+    };
   }
 
   public getSchemaCountFunction (schemaIdentifier : string) : SchemaCountFunction {
@@ -171,11 +176,11 @@ export class MongoDbProtocol {
 
     return async (parameters) => {
       const result = await collection.countDocuments(parameters.query);
-  
+
       return {
         success: result !== undefined,
         count: result,
       };
-    }
+    };
   }
 }

@@ -16,11 +16,11 @@ export const createObjectIdFunctionDefinition : FunctionDefinition = {
   input: { "stringId": { type: "string", required: true } },
   output: {
     "errorMessage": { "type": "string", "required": false },
-    "objectId": { "type": "cloudedObject", "required": false }
-  }
-}
+    "objectId": { "type": "cloudedObject", "required": false },
+  },
+};
 
 export const createObjectIdMetaSystemFunction : MetaSystemFunction = {
   function: createObjectId,
-  definition: createObjectIdFunctionDefinition
-}
+  definition: createObjectIdFunctionDefinition,
+};

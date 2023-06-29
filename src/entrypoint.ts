@@ -1,6 +1,6 @@
 // Make a function to Add "_id" field to a schema
-import { SchemaType } from "schema-repo.js";
-import { ProtocolConfigParams } from "./main-class.js";
+import { SchemaType } from "./schema-repo.js";
+import { MongoDbProtocol, ProtocolConfigParams } from "./main-class.js";
 import { createObjectIdMetaSystemFunction } from "./functions/createObjectId.js";
 import { allElementsMetaSystemFunction,
   containsElementThatMetaSystemFunction,
@@ -8,7 +8,7 @@ import { allElementsMetaSystemFunction,
 import { andMetaSystemFunction,
   norMetaSystemFunction,
   notMetaSystemFunction,
-  orMetaSystemFunction } from "functions/logic-operators.js";
+  orMetaSystemFunction } from "./functions/logic-operators.js";
 import { equalMetaSystemFunction,
   existsMetaSystemFunction,
   greaterOrEqualToMetaSystemFunction,
@@ -18,14 +18,23 @@ import { equalMetaSystemFunction,
   lesserOrEqualToMetaSystemFunction,
   lesserThanMetaSystemFunction,
   matchesRegexMetaSystemFunction,
-  notEqualMetaSystemFunction } from "functions/query-operators.js";
+  notEqualMetaSystemFunction } from "./functions/query-operators.js";
+import { schemaInsertFunctionDefinition,
+  type FunctionDefinition,
+  schemaUpdateByIdFunctionDefinition,
+  schemaDeleteByIdFunctionDefinition,
+  schemaFindByIdFunctionDefinition,
+  schemaCountFunctionDefinition,
+  schemaFindFunctionDefinition,
+  schemaUpdateFunctionDefinition,
+  schemaDeleteFunctionDefinition } from "./main-types.js";
 
 
-const addIdToSchema = (schema: SchemaType) : SchemaType => {
+const addIdToSchema = (schema : SchemaType) : SchemaType => {
   schema.format["_id"] = { "type": "string" };
 
-  return schema
-}
+  return schema;
+};
 
 const libraryFunctions = [
   createObjectIdMetaSystemFunction,
@@ -46,24 +55,75 @@ const libraryFunctions = [
   isNoneOfMetaSystemFunction,
   existsMetaSystemFunction,
   matchesRegexMetaSystemFunction,
-]
+];
 
-export const configure = (broker, config : ProtocolConfigParams) => {
+const schemaFunctions : FunctionDefinition[] = [
+  schemaInsertFunctionDefinition,
+  schemaUpdateByIdFunctionDefinition,
+  schemaDeleteByIdFunctionDefinition,
+  schemaFindByIdFunctionDefinition,
+  schemaCountFunctionDefinition,
+  schemaFindFunctionDefinition,
+  schemaUpdateFunctionDefinition,
+  schemaDeleteFunctionDefinition,
+];
+
+const schemaFunctionsMap : [FunctionDefinition, keyof MongoDbProtocol][] = [
+  [schemaInsertFunctionDefinition, "getSchemaInsertFunction"],
+  [schemaUpdateByIdFunctionDefinition, "getUpdateByIdFunction"],
+  [schemaDeleteByIdFunctionDefinition, "getSchemaDeleteByIdFunction"],
+  [schemaFindByIdFunctionDefinition, "getFindByIdFunction"],
+  [schemaCountFunctionDefinition, "getSchemaCountFunction"],
+  [schemaFindFunctionDefinition, "getSchemaFindFunction"],
+  [schemaUpdateFunctionDefinition, "getSchemaUpdateFunction"],
+  [schemaDeleteFunctionDefinition, "getSchemaDeleteFunction"],
+];
+
+// TODO filter used schemas!!!!!!!!!
+
+// eslint-disable-next-line max-lines-per-function
+export const configure = (broker, config : ProtocolConfigParams) : ProtocolConfigParams => {
   const allSchemas = broker.schemas.getAll();
 
-  const newSchemas: SchemaType[] = allSchemas.map(addIdToSchema)
+  const newSchemas : SchemaType[] = allSchemas.map(addIdToSchema);
   newSchemas.forEach((schema) => {
     broker.schemas.modifySchema(schema);
   });
 
+  const updatedSchemas : SchemaType[] = broker.schemas.getAll();
+
   libraryFunctions.forEach((func) => {
-    broker.addonsFunctions.register(func.function, func.definition)
-  })
+    broker.addonsFunctions.register(func.function, func.definition);
+  });
+
+  updatedSchemas.forEach((schema) => {
+    for (const definition of schemaFunctions) {
+      broker.schemaFunctions.preRegisterSchemaFucntion(
+        schema.name, definition,
+      );
+    }
+  });
 
   broker.done();
-}
+  return config;
+};
 
-export const boot = (broker, context) => {
+export const boot = async (broker, context : ProtocolConfigParams) : Promise<void> => {
   // Launch server
-}
+  const allSchemas : SchemaType[] = broker.schemas.getAll();
+
+  const mongoDbProtocol = new MongoDbProtocol(context, broker.logger, allSchemas);
+
+  allSchemas.forEach((schema) => {
+    for (const nameMap of schemaFunctionsMap) {
+      broker.schemaFunctions.setRegisteredSchemaFunction(
+        schema.name,
+        nameMap[0].functionName,
+        mongoDbProtocol[nameMap[1]],
+      );
+    }
+  });
+
+  await mongoDbProtocol.initialize();
+};
 
