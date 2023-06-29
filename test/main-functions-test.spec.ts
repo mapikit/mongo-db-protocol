@@ -82,7 +82,7 @@ describe("General Tests", () => {
     const resultId = await mainClassInstance.getUpdateByIdFunction("abcd", { data: { name: "Johnny" }, id: inserted.insertedId });
     const unmodifiedAge = (await mainClassInstance.getFindByIdFunction("abcd", { id: inserted.insertedId })).data["age"];
 
-    const resultQuery = await mainClassInstance.update("abcd", { data: { age: 23 },
+    const resultQuery = await mainClassInstance.getSchemaUpdateFunction("abcd", { data: { age: 23 },
       query: { age: { equal_to: 22 } } },
     );
     const unmodifiedName = (await mainClassInstance.getFindByIdFunction("abcd", { id: inserted.insertedId })).data["name"];

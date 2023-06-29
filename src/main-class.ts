@@ -1,6 +1,13 @@
 import * as Mongo from "mongodb";
 import { SchemaRepo, SchemaType } from "./schema-repo.js";
-import { SchemaDeleteByIdFunction, SchemaFindByIdFunction, SchemaFindFunction, SchemaInsertFunction, SchemaUpdateByIdFunction } from "./main-types.js";
+import { SchemaCountFunction,
+  SchemaDeleteByIdFunction,
+  SchemaDeleteFunction,
+  SchemaFindByIdFunction,
+  SchemaFindFunction,
+  SchemaInsertFunction,
+  SchemaUpdateByIdFunction,
+  SchemaUpdateFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
 type Logger = {
@@ -36,11 +43,11 @@ export class MongoDbProtocol {
     this.getSchemaInsertFunction = this.getSchemaInsertFunction.bind(this);
     this.getSchemaDeleteByIdFunction = this.getSchemaDeleteByIdFunction.bind(this);
     this.getUpdateByIdFunction = this.getUpdateByIdFunction.bind(this);
-    this.update = this.update.bind(this);
-    this.delete = this.delete.bind(this);
+    this.getSchemaUpdateFunction = this.getSchemaUpdateFunction.bind(this);
+    this.getSchemaDeleteFunction = this.getSchemaDeleteFunction.bind(this);
     this.getFindByIdFunction = this.getFindByIdFunction.bind(this);
-    this.find = this.find.bind(this);
-    this.count = this.count.bind(this);
+    this.getSchemaFindFunction = this.getSchemaFindFunction.bind(this);
+    this.getSchemaCountFunction = this.getSchemaCountFunction.bind(this);
 
     this.defaultLimit = protocolConfiguration.defaultLimit ?? 1000;
   }
@@ -73,7 +80,7 @@ export class MongoDbProtocol {
 
       return {
         success: result.insertedId !== undefined,
-        insertedKey: result.insertedId.toString(),
+        insertedId: result.insertedId.toString(),
       };
     };
   }
@@ -112,38 +119,37 @@ export class MongoDbProtocol {
     }
   }
 
-  public async update (schemaIdentifier : string, parameters : { data : unknown, query : QueryType })
-    : Promise<QueryOperationResponse> {
-    const schema = this.schemaRepo.getSchema(schemaIdentifier);
-    const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
-      .getFullMongoQuery();
+  public getSchemaUpdateFunction (schemaIdentifier : string) : SchemaUpdateFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = await this.schemaRepo.getCollection(schemaIdentifier).updateMany(builtQuery, { $set: parameters.data });
-
-    return {
-      success: result !== undefined,
-      affectedEntities: result.modifiedCount,
-    };
+    return async (parameters) => {
+      const result = await collection.updateMany(parameters.query, { $set: parameters.updatedData });
+  
+      return {
+        success: result !== undefined,
+        updatedCount: result.modifiedCount,
+      };
+    }
   }
 
-  public async delete (schemaIdentifier : string, parameters : { query : QueryType }) : Promise<QueryOperationResponse> {
-    const schema = this.schemaRepo.getSchema(schemaIdentifier);
-    const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
-      .getFullMongoQuery();
+  public getSchemaDeleteFunction (schemaIdentifier : string) : SchemaDeleteFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = await this.schemaRepo.getCollection(schemaIdentifier).deleteMany(builtQuery);
+    return async (parameters) => {
+      const result = await collection.deleteMany(parameters.query);
 
-    return {
-      success: result !== undefined,
-      affectedEntities: result.deletedCount,
-    };
+      return {
+        success: result !== undefined,
+        deletedCount: result.deletedCount,
+      };
+    }
   }
 
   // eslint-disable-next-line max-lines-per-function
-  public find (schemaIdentifier : string) : SchemaFindFunction {
+  public getSchemaFindFunction (schemaIdentifier : string) : SchemaFindFunction {
     const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = async (parameters) => {
+    return async (parameters) => {
       let partialResult = collection.find(parameters.query);
 
       if (parameters.limit) partialResult = partialResult.limit(parameters.limit ?? this.defaultLimit);
@@ -158,19 +164,18 @@ export class MongoDbProtocol {
         pages,
       }
     }
-
-    return result;
   }
 
-  public async count (schemaIdentifier : string, query : QueryType) : Promise<CountResponse> {
-    const schema = this.schemaRepo.getSchema(schemaIdentifier);
-    const builtQuery = new MongoSchemaQueryBuilder(query, this.getQueryPerProperty, schema).getFullMongoQuery();
+  public getSchemaCountFunction (schemaIdentifier : string) : SchemaCountFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = await this.schemaRepo.getCollection(schemaIdentifier).countDocuments(builtQuery);
-
-    return {
-      success: result !== undefined,
-      count: result,
-    };
+    return async (parameters) => {
+      const result = await collection.countDocuments(parameters.query);
+  
+      return {
+        success: result !== undefined,
+        count: result,
+      };
+    }
   }
 }
