@@ -12,7 +12,7 @@ import { SchemaCountFunction,
   SchemaUpdateFunction } from "./main-types.js";
 
 type LoggerFunction = (...data : unknown[]) => void
-type Logger = {
+export type Logger = {
   fatal : LoggerFunction;
   success : LoggerFunction;
   operation : LoggerFunction;
@@ -33,7 +33,7 @@ export class MongoDbProtocol {
   private connection : Mongo.MongoClient;
   private db : Mongo.Db;
   private schemaRepo : SchemaRepo;
-  private defaultLimit = 1000;
+  private defaultLimit = 100;
 
   // eslint-disable-next-line max-lines-per-function
   constructor (
@@ -150,21 +150,27 @@ export class MongoDbProtocol {
     };
   }
 
+  // TODO add sorting capabilites
   // eslint-disable-next-line max-lines-per-function
   public getSchemaFindFunction (schemaIdentifier : string) : SchemaFindFunction {
     const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
+    // eslint-disable-next-line max-lines-per-function
     return async (parameters) => {
-      let partialResult = collection.find(parameters.query);
+      const mongoCursor = collection.find(parameters.query);
 
-      if (parameters.limit) partialResult = partialResult.limit(parameters.limit ?? this.defaultLimit);
-      if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
-      const data = await partialResult.toArray();
+      if (parameters.limit) mongoCursor.limit(parameters.limit ?? this.defaultLimit);
+      if (parameters.offset) mongoCursor.skip(parameters.offset);
+      const data = [];
+      for await (const item of mongoCursor) {
+        data.push({ ...item, _id: item["_id"].toString() });
+      }
+
       const totalCount = data.length;
       const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
 
       return {
-        data: [],
+        data,
         success: true,
         pages,
       };

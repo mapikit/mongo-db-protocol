@@ -2,7 +2,11 @@ import { MetaSystemFunction } from "main-types.js";
 
 // Multi Element Operations
 export const containsElementThat = (param : { rules : object[] }) : object => {
-  return { query: { $elemMatch: param.rules } };
+  const match = {};
+  for (const rule of param.rules) {
+    Object.assign(match, rule);
+  }
+  return { query: { $elemMatch: match } };
 };
 
 export const containsElementThatMetaSystemFunction : MetaSystemFunction = {
