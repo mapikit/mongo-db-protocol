@@ -1,11 +1,11 @@
 import { MongoDbProtocol, ProtocolConfigParams } from "../src/main-class.js";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { expect } from "chai";
-import { ObjectId } from "mongodb";
 import { SchemaType } from "../src/schema-repo.js";
 import { loggerMock } from "./logger.mock.js";
 import { containsElementThat } from "../src/functions/list-operators.js";
 import { greaterOrEqualTo, lesserThan } from "../src/functions/query-operators.js";
+import { sortResult } from "../src/functions/extras.js";
 
 const sampleSchema : SchemaType[] = [
   {
@@ -23,6 +23,7 @@ const dollarSchema : SchemaType[] = [
     "format": {
       dollarBillsInVirtualWallet: { "type": "array", "subtype": "number" },
       name: { type: "string" },
+      priority: { type: "number" },
     },
     "identifier": "xyz",
     "name": "testSchema",
@@ -30,10 +31,10 @@ const dollarSchema : SchemaType[] = [
 ];
 
 const dollarSchemaEntities = [
-  { dollarBillsInVirtualWallet: [ 2, 5, 5, 20, 50, 100 ], name: "Mary" },
-  { dollarBillsInVirtualWallet: [ 5, 10, 100, 100 ], name: "John" },
-  { dollarBillsInVirtualWallet: [ 2, 10, 10, 50, 100 ], name: "Candice" },
-  { dollarBillsInVirtualWallet: [ 5, 10, 50, 50 ], name: "Juan" },
+  { dollarBillsInVirtualWallet: [ 2, 5, 5, 20, 50, 100 ], name: "Mary", priority: 0 },
+  { dollarBillsInVirtualWallet: [ 5, 10, 100, 100 ], name: "John", priority: 2 },
+  { dollarBillsInVirtualWallet: [ 2, 10, 10, 50, 100 ], name: "Candice", priority: 3 },
+  { dollarBillsInVirtualWallet: [ 5, 10, 50, 50 ], name: "Juan", priority: 3 },
 ];
 
 const generateUri = async () : Promise<string> => {
@@ -81,6 +82,29 @@ describe("General Tests", () => {
 
     expect(result.success).to.be.true;
     expect(result.data[0]["name"]).to.be.equal("Mary");
-    expect(result.pages).to.be.equal(1);
+    expect(result.total).to.be.equal(1);
+  });
+
+  it("Sorts successfully", async () => {
+    const config : ProtocolConfigParams = { dbConnectionString: await generateUri(), databaseName: "SomeDb" };
+    const mainClassInstance = new MongoDbProtocol(config, loggerMock, dollarSchema);
+
+    await mainClassInstance.initialize();
+    const insertSchemaFunction = mainClassInstance.getSchemaInsertFunction(dollarSchema[0].identifier);
+    const findSchemaFunction = mainClassInstance.getSchemaFindFunction(dollarSchema[0].identifier);
+
+    for (const entity of dollarSchemaEntities) {
+      await insertSchemaFunction({ data: entity });
+    }
+
+    // Step would be executed by Meta-System :ok_hand:
+    const sort = { "priority": sortResult({ mode: "descending" })["sort"] };
+
+    const result = await findSchemaFunction({ query: {}, sort, limit: 1 });
+
+    expect(result.success).to.be.true;
+    expect(result.total).to.be.equal(4);
+    expect(result.data.length).to.be.equal(1);
+    expect(result.data[0]["priority"]).to.be.equal(3);
   });
 });

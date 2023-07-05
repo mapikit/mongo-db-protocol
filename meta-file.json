@@ -1,23 +1,15 @@
 {
-  "protocolName": "mongo-db-protocol",
-  "description": "A DB protocol for mongo and Meta-System",
+  "name": "mongo-db-protocol",
+  "version": "3.0.0-alpha",
   "entrypoint": "./dist/index.js",
-  "className": "MongoDbProtocol",
   "configurationFormat": {
     "dbConnectionString": { "type": "string", "required": true },
-    "databaseName": { "type": "string", "required": true }
+    "databaseName": { "type": "string", "required": true },
+    "usedSchemas": { "type": "array", "required": false, "subtype": { "identifier": { "type": "string", "required": true } } },
+    "defaultLimit": { "type": "number", "required": false }
   },
-  "functionDefinitions": [
-    {
-      "input": {
-        "idString" : { "type": "string", "required": true }
-      },
-      "output": {
-        "objectId" : { "type": "cloudedObject", "required": false },
-        "errorMessage" : { "type": "string", "required": false }
-      },
-      "functionName": "createObjectId",
-      "description": "Creates an ObjectId from a 12 character string or 24 character hex id"
-    }
+  "permissions": [
+    { "entity": "schemaFunctions", "permissions": ["preregister_functions", "set_registered_functions"] },
+    { "entity": "schemas", "permissions": ["modify_schema", "get_all"] }
   ]
 }

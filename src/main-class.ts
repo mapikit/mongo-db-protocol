@@ -52,7 +52,7 @@ export class MongoDbProtocol {
     this.getSchemaFindFunction = this.getSchemaFindFunction.bind(this);
     this.getSchemaCountFunction = this.getSchemaCountFunction.bind(this);
 
-    this.defaultLimit = protocolConfiguration.defaultLimit ?? 1000;
+    this.defaultLimit = protocolConfiguration.defaultLimit ?? 100;
   }
 
   public async initialize () : Promise<void> {
@@ -150,15 +150,20 @@ export class MongoDbProtocol {
     };
   }
 
-  // TODO add sorting capabilites
   // eslint-disable-next-line max-lines-per-function
   public getSchemaFindFunction (schemaIdentifier : string) : SchemaFindFunction {
     const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
     // eslint-disable-next-line max-lines-per-function
     return async (parameters) => {
-      const mongoCursor = collection.find(parameters.query);
+      const mongoCursor = collection.find(parameters.query ?? {});
 
+      if (parameters.sort) {
+        const sortPairs = Object.entries(parameters.sort);
+        for (const sortPair of sortPairs) {
+          mongoCursor.sort(sortPair[0], sortPair[1]);
+        }
+      }
       if (parameters.limit) mongoCursor.limit(parameters.limit ?? this.defaultLimit);
       if (parameters.offset) mongoCursor.skip(parameters.offset);
       const data = [];
@@ -166,13 +171,12 @@ export class MongoDbProtocol {
         data.push({ ...item, _id: item["_id"].toString() });
       }
 
-      const totalCount = data.length;
-      const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
+      const totalCount = await collection.countDocuments(parameters.query ?? {});
 
       return {
         data,
         success: true,
-        pages,
+        total: totalCount,
       };
     };
   }

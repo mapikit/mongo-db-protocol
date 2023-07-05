@@ -42,19 +42,20 @@ export const schemaFindByIdFunctionDefinition : FunctionDefinition = {
   output: { success: { type: "boolean", required: true }, data: { type: "cloudedObject", required: true } },
 };
 
-export type SchemaFindFunction = (parameters : { query : object, limit ?: number, offset ?: number})
-=> Promise<{ data : unknown[], success : boolean, pages ?: number }>;
+export type SchemaFindFunction = (parameters : { query ?: object, sort ?: object ,limit ?: number, offset ?: number})
+=> Promise<{ data : unknown[], success : boolean, total : number }>;
 export const schemaFindFunctionDefinition : FunctionDefinition = {
   functionName: "find",
   input: {
-    query: { type: "cloudedObject", required: true },
+    query: { type: "cloudedObject", required: false },
+    sort: { type: "cloudedObject", required: false },
     limit: { type: "number", required: false },
     offset: { type: "number", required: false },
   },
   output: {
     success: { type: "boolean", required: true },
     data: { type: "array", required: false, subtype: "cloudedObject" },
-    pages: { type: "number", required: false },
+    total: { type: "number", required: true },
   },
 };
 
