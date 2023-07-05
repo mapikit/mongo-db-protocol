@@ -101,7 +101,7 @@ export const configure = (broker, config : ProtocolConfigParams) : ProtocolConfi
 
   updatedSchemas.forEach((schema) => {
     for (const definition of schemaFunctions) {
-      broker.schemaFunctions.preRegisterSchemaFucntion(
+      broker.schemaFunctions.preRegisterSchemaFunction(
         schema.name, definition,
       );
     }
