@@ -121,16 +121,16 @@ export const boot = async (broker, context : ProtocolConfigParams) : Promise<voi
 
   const mongoDbProtocol = new MongoDbProtocol(context, broker.logger, usedSchemas);
 
+  await mongoDbProtocol.initialize();
+
   usedSchemas.forEach((schema) => {
     for (const nameMap of schemaFunctionsMap) {
       broker.schemaFunctions.setRegisteredSchemaFunction(
         schema.name,
         nameMap[0].functionName,
-        mongoDbProtocol[nameMap[1]],
+        mongoDbProtocol[nameMap[1]](schema.name),
       );
     }
   });
-
-  await mongoDbProtocol.initialize();
 };
 

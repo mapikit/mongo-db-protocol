@@ -38,7 +38,7 @@ export class MongoDbProtocol {
   // eslint-disable-next-line max-lines-per-function
   constructor (
     private readonly protocolConfiguration : ProtocolConfigParams,
-    public readonly logger : Logger,
+    private readonly logger : Logger,
     private readonly schemaList : SchemaType[],
   ) {
     this.initialize = this.initialize.bind(this);
@@ -82,8 +82,8 @@ export class MongoDbProtocol {
       const result = await schemaCollection.insertOne(parameters.data);
 
       return {
-        success: result.insertedId !== undefined,
-        insertedId: result.insertedId.toString(),
+        success: result.acknowledged && result.insertedId !== undefined,
+        insertedId: result.acknowledged ? result.insertedId.toString() : undefined,
       };
     };
   }

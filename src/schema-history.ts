@@ -1,12 +1,12 @@
 import { SchemaType } from "./schema-repo.js";
 
 export interface SchemaHistoryEntry {
-  creationDate : string; // ISO Date
+  creationDate : Date; // ISO Date
   schemaList : SchemaType[]
 }
 
 export class SchemaHistory {
-  private creationDate = new Date().toISOString();
+  private creationDate = new Date();
   private timeSet = false;
 
   public constructor (
@@ -20,12 +20,12 @@ export class SchemaHistory {
     };
   }
 
-  public setTime (isoDate : string) : void {
+  public setTime (date : Date) : void {
     if (this.timeSet === true) {
       throw Error("Cannot modify time already set on schema history");
     }
 
-    this.creationDate = isoDate;
+    this.creationDate = date;
     this.timeSet = true;
   }
 
