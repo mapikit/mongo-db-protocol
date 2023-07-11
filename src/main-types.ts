@@ -77,7 +77,7 @@ export const schemaDeleteFunctionDefinition : FunctionDefinition = {
 export type SchemaUpdateFunction = (parameters : { query : object, updatedData : object })
 => Promise<{ success : boolean, updatedCount ?: number }>;
 export const schemaUpdateFunctionDefinition : FunctionDefinition = {
-  functionName: "delete",
-  input: { query: { type: "cloudedObject", required: true } },
-  output: { success: { type: "boolean", required: true }, deletedCount: { type: "number", required: false } },
+  functionName: "update",
+  input: { query: { type: "cloudedObject", required: true }, updatedData: { type: "cloudedObject", required: true } },
+  output: { success: { type: "boolean", required: true }, updatedCount: { type: "number", required: false } },
 };
