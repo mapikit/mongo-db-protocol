@@ -32,7 +32,7 @@ import { sortResultMetaSystemFunction } from "./functions/extras.js";
 
 
 const addIdToSchema = (schema : SchemaType) : SchemaType => {
-  schema.format["_id"] = { "type": "string" };
+  schema.format["_id"] = { "type": "string", required: true };
 
   return schema;
 };
@@ -102,7 +102,7 @@ export const configure = (broker, config : ProtocolConfigParams) : ProtocolConfi
   updatedSchemas.forEach((schema) => {
     for (const definition of schemaFunctions) {
       broker.schemaFunctions.preRegisterSchemaFunction(
-        schema.name, definition,
+        schema.identifier, definition,
       );
     }
   });
@@ -126,9 +126,9 @@ export const boot = async (broker, context : ProtocolConfigParams) : Promise<voi
   usedSchemas.forEach((schema) => {
     for (const nameMap of schemaFunctionsMap) {
       broker.schemaFunctions.setRegisteredSchemaFunction(
-        schema.name,
+        schema.identifier,
         nameMap[0].functionName,
-        mongoDbProtocol[nameMap[1]](schema.name),
+        mongoDbProtocol[nameMap[1]](schema.identifier),
       );
     }
   });
