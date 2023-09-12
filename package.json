@@ -1,6 +1,6 @@
 {
   "name": "@meta-system/mongodb-db-protocol",
-  "version": "3.0.0-alpha",
+  "version": "3.0.0",
   "description": "A DB protocol for mongo and Meta-System",
   "main": "dist/index.js",
   "scripts": {
