@@ -1,0 +1,16 @@
+{
+  "name": "mongo-db-protocol",
+  "version": "3.0.0-alpha",
+  "entrypoint": "./dist/entrypoint.js",
+  "configurationFormat": {
+    "dbConnectionString": { "type": "string", "required": true },
+    "databaseName": { "type": "string", "required": true },
+    "usedSchemas": { "type": "array", "required": false, "subtype": { "identifier": { "type": "string", "required": true } } },
+    "defaultLimit": { "type": "number", "required": false }
+  },
+  "permissions": [
+    { "entity": "schemaFunctions", "permissions": ["preregister_functions", "set_registered_functions"] },
+    { "entity": "schemas", "permissions": ["modify_schema", "get_all"] },
+    { "entity": "addonsFunctions", "permissions": ["register"] }
+  ]
+}

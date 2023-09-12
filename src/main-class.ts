@@ -1,52 +1,58 @@
-import {
-  DBProtocol,
-  BaseDBProtocolResponse,
-  QueryType,
-  CountResponse,
-  FindByIdResponse,
-  FindResponse,
-  QueryOperationResponse } from "@meta-system/meta-protocol-helper";
-
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+// Disabled because the type is elsewhere for the violations in this file
 import * as Mongo from "mongodb";
-import { SchemaRepo } from "./schema-repo.js";
-import { MongoSchemaQueryBuilder } from "./query-builder/query-builder.js";
-import { createObjectId } from "./functions/createObjectId.js";
-import { SchemaType } from "@meta-system/meta-protocol-helper/dist/type/schema-types.js";
+import { SchemaRepo, SchemaType } from "./schema-repo.js";
+import { SchemaCountFunction,
+  SchemaDeleteByIdFunction,
+  SchemaDeleteFunction,
+  SchemaFindByIdFunction,
+  SchemaFindFunction,
+  SchemaInsertFunction,
+  SchemaUpdateByIdFunction,
+  SchemaUpdateFunction } from "./main-types.js";
 
-type PublicMethodsType = {
-  createObjectId : typeof createObjectId;
+type LoggerFunction = (...data : unknown[]) => void
+export type Logger = {
+  fatal : LoggerFunction;
+  success : LoggerFunction;
+  operation : LoggerFunction;
+  error : LoggerFunction;
+  warn : LoggerFunction;
+  info : LoggerFunction;
+  debug : LoggerFunction;
 }
 
 export interface ProtocolConfigParams {
   dbConnectionString : string;
   databaseName : string;
+  usedSchemas ?: { identifier : string }[]
+  defaultLimit ?: number;
 }
 
-export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
+export class MongoDbProtocol {
   private connection : Mongo.MongoClient;
   private db : Mongo.Db;
   private schemaRepo : SchemaRepo;
+  private defaultLimit = 100;
 
-  constructor (config : ProtocolConfigParams, schemaList : SchemaType[]) {
-    super(config, schemaList);
-
-
-    this.verifySchemaSupport = this.verifySchemaSupport.bind(this);
-    this.validateConfiguration = this.validateConfiguration.bind(this);
+  // eslint-disable-next-line max-lines-per-function
+  constructor (
+    private readonly protocolConfiguration : ProtocolConfigParams,
+    private readonly logger : Logger,
+    private readonly schemaList : SchemaType[],
+  ) {
     this.initialize = this.initialize.bind(this);
     this.shutdown = this.shutdown.bind(this);
-    this.insert = this.insert.bind(this);
-    this.deleteById = this.deleteById.bind(this);
-    this.updateById = this.updateById.bind(this);
-    this.update = this.update.bind(this);
-    this.delete = this.delete.bind(this);
-    this.findById = this.findById.bind(this);
-    this.find = this.find.bind(this);
-    this.count = this.count.bind(this);
-  }
+    this.getSchemaInsertFunction = this.getSchemaInsertFunction.bind(this);
+    this.getSchemaDeleteByIdFunction = this.getSchemaDeleteByIdFunction.bind(this);
+    this.getUpdateByIdFunction = this.getUpdateByIdFunction.bind(this);
+    this.getSchemaUpdateFunction = this.getSchemaUpdateFunction.bind(this);
+    this.getSchemaDeleteFunction = this.getSchemaDeleteFunction.bind(this);
+    this.getFindByIdFunction = this.getFindByIdFunction.bind(this);
+    this.getSchemaFindFunction = this.getSchemaFindFunction.bind(this);
+    this.getSchemaCountFunction = this.getSchemaCountFunction.bind(this);
 
-  public verifySchemaSupport () : void {
-    this.schemaList;
+    this.defaultLimit = protocolConfiguration.defaultLimit ?? 100;
   }
 
   public async initialize () : Promise<void> {
@@ -56,9 +62,9 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     this.db = this.connection.db(this.protocolConfiguration.databaseName);
 
     await this.db.command({ ping: 1 });
-    console.log(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
+    this.logger.info(`[Mongo DB Protocol] Success connecting to "${this.protocolConfiguration.databaseName}"`);
 
-    this.schemaRepo = new SchemaRepo(this.schemaList, this.db, this.checkSchemaDiff);
+    this.schemaRepo = new SchemaRepo(this.schemaList, this.db);
     await this.schemaRepo.bootDb();
   }
 
@@ -70,109 +76,121 @@ export class MongoDbProtocol extends DBProtocol<ProtocolConfigParams> {
     delete this.db;
   }
 
-  getProtocolPublicMethods () : PublicMethodsType {
-    return {
-      createObjectId: createObjectId,
+  public getSchemaInsertFunction (schemaIdentifier : string) : SchemaInsertFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      const result = await schemaCollection.insertOne(parameters.data);
+
+      return {
+        success: result.acknowledged && result.insertedId !== undefined,
+        insertedId: result.acknowledged ? result.insertedId.toString() : undefined,
+      };
     };
   }
 
-  public async insert (schemaId : string, parameters : { data : unknown })
-    : Promise<BaseDBProtocolResponse & { insertedId : string }> {
-    const result = await this.schemaRepo.getCollection(schemaId).insertOne(parameters.data);
+  public getSchemaDeleteByIdFunction (schemaIdentifier : string) : SchemaDeleteByIdFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      await schemaCollection.deleteOne({ _id: new Mongo.ObjectId(parameters.id) });
 
-    return {
-      success: result.insertedId !== undefined,
-      insertedId: result.insertedId.toString(),
+      return {
+        deleted: true,
+      };
     };
   }
 
-  public async deleteById (schemaId : string, parameters : { id : string }) : Promise<BaseDBProtocolResponse> {
-    await this.schemaRepo.getCollection(schemaId).deleteOne({ _id: new Mongo.ObjectId(parameters.id) });
+  public getUpdateByIdFunction (schemaIdentifier : string) : SchemaUpdateByIdFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      const result = await schemaCollection.updateOne(
+        { _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data },
+      );
 
-    return {
-      success: true,
+      return {
+        success: result.modifiedCount > 0,
+      };
     };
   }
 
-  public async updateById (schemaId : string, parameters : { data : unknown, id : string })
-    : Promise<BaseDBProtocolResponse> {
-    const result = await this.schemaRepo.getCollection(schemaId)
-      .updateOne({ _id: new Mongo.ObjectId(parameters.id) }, { $set: parameters.data });
+  public getFindByIdFunction (schemaIdentifier : string) : SchemaFindByIdFunction {
+    const schemaCollection = this.schemaRepo.getCollection(schemaIdentifier);
+    return async (parameters) => {
+      const result = schemaCollection.findOne({ _id: new Mongo.ObjectId(parameters.id) });
 
-    return {
-      success: result.matchedCount > 0,
+      return {
+        success: true,
+        data: result,
+      };
     };
   }
 
-  public async update (schemaId : string, parameters : { data : unknown, query : QueryType })
-    : Promise<QueryOperationResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
-    const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
-      .getFullMongoQuery();
+  public getSchemaUpdateFunction (schemaIdentifier : string) : SchemaUpdateFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = await this.schemaRepo.getCollection(schemaId).updateMany(builtQuery, { $set: parameters.data });
+    return async (parameters) => {
+      const result = await collection.updateMany(parameters.query, { $set: parameters.updatedData });
 
-    return {
-      success: result !== undefined,
-      affectedEntities: result.modifiedCount,
+      return {
+        success: result !== undefined,
+        updatedCount: result.modifiedCount,
+      };
     };
   }
 
-  public async delete (schemaId : string, parameters : { query : QueryType }) : Promise<QueryOperationResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
-    const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
-      .getFullMongoQuery();
+  public getSchemaDeleteFunction (schemaIdentifier : string) : SchemaDeleteFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = await this.schemaRepo.getCollection(schemaId).deleteMany(builtQuery);
+    return async (parameters) => {
+      const result = await collection.deleteMany(parameters.query);
 
-    return {
-      success: result !== undefined,
-      affectedEntities: result.deletedCount,
-    };
-  }
-
-  public async findById (schemaId : string, parameters : { id : string }) : Promise<FindByIdResponse> {
-    const result = await this.schemaRepo.getCollection(schemaId).findOne({ _id: new Mongo.ObjectId(parameters.id) });
-
-    return {
-      success: true,
-      data: result,
+      return {
+        success: result !== undefined,
+        deletedCount: result.deletedCount,
+      };
     };
   }
 
   // eslint-disable-next-line max-lines-per-function
-  public async find (schemaId : string, parameters : { query : QueryType, limit ?: number, offset ?: number })
-    : Promise<FindResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
-    const builtQuery = new MongoSchemaQueryBuilder(parameters.query, this.getQueryPerProperty, schema)
-      .getFullMongoQuery();
+  public getSchemaFindFunction (schemaIdentifier : string) : SchemaFindFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    let partialResult = this.schemaRepo.getCollection(schemaId).find(builtQuery);
+    // eslint-disable-next-line max-lines-per-function
+    return async (parameters) => {
+      const mongoCursor = collection.find(parameters.query ?? {});
 
-    if (parameters.limit) partialResult = partialResult.limit(parameters.limit);
-    if (parameters.offset) partialResult = partialResult.skip(parameters.offset);
+      if (parameters.sort) {
+        const sortPairs = Object.entries(parameters.sort);
+        for (const sortPair of sortPairs) {
+          mongoCursor.sort(sortPair[0], sortPair[1]);
+        }
+      }
+      if (parameters.limit) mongoCursor.limit(parameters.limit ?? this.defaultLimit);
+      if (parameters.offset) mongoCursor.skip(parameters.offset);
+      const data = [];
+      for await (const item of mongoCursor) {
+        data.push({ ...item, _id: item["_id"].toString() });
+      }
 
-    const totalCount = await partialResult.count();
-    const pages = parameters.limit ? Math.ceil((totalCount) / parameters.limit) : undefined;
-    const result = [];
-    await partialResult.forEach((element) => { result.push(element); });
+      const totalCount = await collection.countDocuments(parameters.query ?? {});
 
-    return {
-      success: partialResult !== undefined,
-      data: result,
-      pages,
+      return {
+        data,
+        success: true,
+        total: totalCount,
+      };
     };
   }
 
-  public async count (schemaId : string, query : QueryType) : Promise<CountResponse> {
-    const schema = this.schemaRepo.getSchema(schemaId);
-    const builtQuery = new MongoSchemaQueryBuilder(query, this.getQueryPerProperty, schema).getFullMongoQuery();
+  public getSchemaCountFunction (schemaIdentifier : string) : SchemaCountFunction {
+    const collection = this.schemaRepo.getCollection(schemaIdentifier);
 
-    const result = await this.schemaRepo.getCollection(schemaId).countDocuments(builtQuery);
+    return async (parameters) => {
+      const result = await collection.countDocuments(parameters.query);
 
-    return {
-      success: result !== undefined,
-      count: result,
+      return {
+        success: result !== undefined,
+        count: result,
+      };
     };
   }
 }
