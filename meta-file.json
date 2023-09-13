@@ -10,7 +10,7 @@
   },
   "permissions": [
     { "entity": "schemaFunctions", "permissions": ["preregister_functions", "set_registered_functions"] },
-    { "entity": "schemas", "permissions": ["modify_schema", "get_all"] },
+    { "entity": "schemas", "permissions": ["modify_schema", "get_all", "get_schema"] },
     { "entity": "addonsFunctions", "permissions": ["register"] }
   ]
 }
