@@ -88,8 +88,6 @@ export const configure = (broker, config : ProtocolConfigParams) : ProtocolConfi
     return allSchemas.find((schema) => schema.identifier === item.identifier);
   }).filter(i => i) : allSchemas;
 
-  console.log(usedSchemas, '<<<<<<<<<<<<<<<<<<<');
-
   const newSchemas : SchemaType[] = usedSchemas.map(addIdToSchema);
   newSchemas.forEach((schema) => {
     broker.schemas.modifySchema(schema);
